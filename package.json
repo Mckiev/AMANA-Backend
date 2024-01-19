@@ -1,0 +1,26 @@
+{
+  "name": "test1",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "ts-node src/main.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^20.11.5",
+    "ts-node": "^10.9.2"
+  },
+  "dependencies": {
+    "@railgun-community/shared-models": "^6.3.0",
+    "@railgun-community/wallet": "^6.4.0",
+    "@types/level-js": "^4.0.5",
+    "dotenv": "^16.3.1",
+    "ethers": "github:Railgun-Community/ethers.js#v6.7.10",
+    "fake-indexeddb": "^5.0.2",
+    "level-js": "^6.1.0"
+  }
+}
