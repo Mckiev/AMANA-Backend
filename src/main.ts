@@ -1,22 +1,37 @@
 import { Mnemonic, randomBytes } from 'ethers';
-import { createRailgunWallet, loadWalletByID } from '@railgun-community/wallet';
-import { NetworkName } from '@railgun-community/shared-models';
-import {POIList} from '@railgun-community/engine';
+import { createRailgunWallet, walletForID, setOnUTXOMerkletreeScanCallback,
+  setOnBalanceUpdateCallback, refreshBalances, loadProvider, setLoggers, startRailgunEngine} from '@railgun-community/wallet';
+import { NetworkName, NETWORK_CONFIG,   MerkletreeScanUpdateEvent,
+  RailgunBalancesEvent, FallbackProviderJsonConfig} from '@railgun-community/shared-models';
+import {POIList, TXIDVersion} from '@railgun-community/engine';
 import "fake-indexeddb/auto";
+import LevelDB from 'level-js';
+import { createArtifactStore } from './create-artifact-store'; 
 import * as dotenv from 'dotenv';
+
+
 dotenv.config();
+
+type Optional<T> = T | null | undefined;
+
+const polygonInfuraApi = process.env.POLYGON_INFURA_API;
+if (typeof polygonInfuraApi === 'undefined') {
+  throw new Error('POLYGON_INFURA_API is not defined in the environment');
+}
+
 
 // TODO will need to generate is safely in the future
 const encryptionKey: string = '0101010101010101010101010101010101010101010101010101010101010101';
 
 const mnemonic:string = process.env.TEST_MNEMONIC ?? Mnemonic.fromEntropy(randomBytes(16)).phrase;
 
-import { 
-  startRailgunEngine, 
-} from '@railgun-community/wallet';
-import LevelDB from 'level-js';
-import { createArtifactStore } from './create-artifact-store'; // We'll get to this in Step 2: Build a persistent store
-​
+const setEngineLoggers = () => {
+  const logMessage: Optional<(msg: any) => void> = console.log;
+  const logError: Optional<(err: any) => void> = console.error;
+  
+  setLoggers(logMessage, logError);
+}
+
 const initializeEngine = (): void => {
   // Name for your wallet implementation.
   // Encrypted and viewable in private transaction history.
@@ -24,7 +39,7 @@ const initializeEngine = (): void => {
   const walletSource = 'quickstart demo';
   
   // LevelDOWN compatible database for storing encrypted wallets.
-  const dbPath = 'engine.db';
+  const dbPath = '.engine.db';
   const db = new LevelDB(dbPath);
   
   // Whether to forward Engine debug logs to Logger.
@@ -72,8 +87,16 @@ const initializeEngine = (): void => {
     verboseScanLogging
   )
 }
+const onMerkletreeScanCallback = (eventData: MerkletreeScanUpdateEvent) => {
+  console.log('onMerkletreeScanCallback');
+  console.log(eventData);
+};
 
-initializeEngine();
+const onBalanceUpdateCallback = (balancesFormatted: RailgunBalancesEvent) => {
+  console.log('onBalanceUpdateCallback');
+  console.log(balancesFormatted);
+};
+
 
 type MapType<T> = {
     [key in NetworkName]?: T;
@@ -85,12 +108,67 @@ const creationBlockNumberMap: MapType<number> = {
     [NetworkName.Polygon]: 3421400,
 }
 
+const loadEngineProvider = async () => {
+  const POLYGON_PROVIDERS_JSON: FallbackProviderJsonConfig = {
+    "chainId": 137,
+    "providers": [
+      // The following are example providers. Use your preferred providers here.
+      {
+        "provider": polygonInfuraApi,
+        "priority": 1,
+        "weight": 1
+      },
+      {
+        "provider": "https://polygon-bor.publicnode.com",
+        "priority": 2,
+        "weight": 1
+      },
+    ]
+  }
+
+  const shouldDebug = 1;
+  
+  const { feesSerialized } = await loadProvider(
+    POLYGON_PROVIDERS_JSON,
+    NetworkName.Polygon,
+    shouldDebug,
+  );
+}
+
+
 async function main() {
+    initializeEngine();
+    await loadEngineProvider();
+    setEngineLoggers();
+    setOnBalanceUpdateCallback(onBalanceUpdateCallback);
+    setOnUTXOMerkletreeScanCallback(onMerkletreeScanCallback);
     const railgunWalletInfo = await createRailgunWallet(encryptionKey, mnemonic, creationBlockNumberMap);
-    const id = railgunWalletInfo.id; // Store this value.
+    const railgunWalletID = railgunWalletInfo.id; // Store this value.
+    
+    const { chain } = NETWORK_CONFIG[NetworkName.Polygon];
+    const walletIdFilter = undefined;
+    try {
+        await refreshBalances(chain, walletIdFilter);
+        console.log('--------BALANCES REFRESHED----------');
+
+        const txidVersion = TXIDVersion.V2_PoseidonMerkle;
+        const wallet = walletForID(railgunWalletID);
+        const balances = await wallet.getTokenBalances(
+          txidVersion,
+          chain,
+          false, // onlySpendable
+        );
+        const transactionHistory = await wallet.getTransactionHistory(
+          chain,
+          undefined,
+        );
+        console.log('Balances: ', balances);
+        console.log('Transaction History: ', transactionHistory);
+    } catch (err) {
+        console.error(err);
+    }
 
     console.log(railgunWalletInfo);
-    console.log(id);
 }
 
 main().catch(console.error);
