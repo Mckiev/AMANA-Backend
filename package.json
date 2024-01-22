@@ -11,6 +11,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@types/leveldown": "^4.0.6",
     "@types/node": "^20.11.5",
     "ts-node": "^10.9.2"
   },
@@ -21,6 +22,8 @@
     "dotenv": "^16.3.1",
     "ethers": "github:Railgun-Community/ethers.js#v6.7.10",
     "fake-indexeddb": "^5.0.2",
-    "level-js": "^6.1.0"
+    "level": "^8.0.0",
+    "level-js": "^6.1.0",
+    "leveldown": "^6.1.1"
   }
 }
