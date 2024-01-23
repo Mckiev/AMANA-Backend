@@ -1,25 +1,24 @@
 import { Mnemonic, randomBytes, formatUnits} from 'ethers';
-import { createRailgunWallet, walletForID, setOnUTXOMerkletreeScanCallback,
-  setOnBalanceUpdateCallback, refreshBalances, loadProvider, setLoggers, startRailgunEngine, getWalletTransactionHistory} from '@railgun-community/wallet';
+import {loadProvider, createRailgunWallet, walletForID, setOnUTXOMerkletreeScanCallback,
+  setOnBalanceUpdateCallback, refreshBalances, setLoggers, startRailgunEngine, getWalletTransactionHistory} from '@railgun-community/wallet';
 import { NetworkName, NETWORK_CONFIG,   MerkletreeScanUpdateEvent,
   RailgunBalancesEvent, FallbackProviderJsonConfig, Chain} from '@railgun-community/shared-models';
-import {POIList, TXIDVersion, TransactionHistoryEntry, AbstractWallet} from '@railgun-community/engine';
+import {POIList, TXIDVersion, AbstractWallet} from '@railgun-community/engine';
 import "fake-indexeddb/auto";
 import LevelDB from 'level-js';
 import { createArtifactStore } from './create-artifact-store'; 
 import * as dotenv from 'dotenv';
-import { log } from 'console';
+import {logTransactionDetails, fetchTransactionHistory, TxInfo} from './utils';
 
+type MapType<T> = {
+  [key in NetworkName]?: T;
+};
 
 dotenv.config();
 
 type Optional<T> = T | null | undefined;
 
-const polygonInfuraApi = process.env.POLYGON_INFURA_API;
-if (typeof polygonInfuraApi === 'undefined') {
-  throw new Error('POLYGON_INFURA_API is not defined in the environment');
-}
-
+const polygonInfuraApi = process.env.POLYGON_INFURA_API ?? '';
 
 // TODO will need to generate is safely in the future
 const encryptionKey: string = '0101010101010101010101010101010101010101010101010101010101010101';
@@ -93,15 +92,12 @@ const onMerkletreeScanCallback = (eventData: MerkletreeScanUpdateEvent) => {
   console.log(eventData);
 };
 
-const onBalanceUpdateCallback = (balancesFormatted: RailgunBalancesEvent) => {
+const onBalanceUpdateCallback = (balancesFormatted: RailgunBalancesEvent, wallet:AbstractWallet, chain: Chain, tx_info:TxInfo) => {
   console.log('onBalanceUpdateCallback');
-  console.log(balancesFormatted);
+  fetchTransactionHistory(wallet, chain, tx_info);
 };
 
 
-type MapType<T> = {
-    [key in NetworkName]?: T;
-};
 // Block numbers for each chain when wallet was first created.
 // If unknown, provide undefined.
 const creationBlockNumberMap: MapType<number> = {
@@ -128,83 +124,34 @@ const loadEngineProvider = async () => {
   }
 
   const shouldDebug = 1;
-  
+
   const { feesSerialized } = await loadProvider(
-    POLYGON_PROVIDERS_JSON,
-    NetworkName.Polygon,
-    shouldDebug,
-  );
-}
+        POLYGON_PROVIDERS_JSON,
+        NetworkName.Polygon,
+        shouldDebug,
+        );
 
-const logTransactionDetails = (transactions: TransactionHistoryEntry[]): void => {
-  console.log('Logging transaction details...');
-  for (const tx of transactions) {
-      try {
-          console.log("Token Address:", tx.receiveTokenAmounts[0].tokenData.tokenAddress);
-          console.log("Amount:", formatUnits(tx.receiveTokenAmounts[0].amount, 18));
-          console.log("MEMO:", tx.receiveTokenAmounts[0].memoText);
-      } catch (error) {
-        console.log('got ERROR');
-          console.error('Error encountered:', error);
-      }
-  }
-}
-
-async function fetchTransactionHistoryRecursive(wallet:AbstractWallet, chain: Chain, tx_length:number) {
-  console.log('Fetching transaction history...');
-  try {
-      const currentTransactionHistory = await wallet.getTransactionHistory(chain, undefined);
-      if (currentTransactionHistory.length > tx_length) {
-          console.log('New transaction[s] detected!');
-          let number_new = currentTransactionHistory.length - tx_length;
-          console.log('Number of new transactions:', number_new);
-          const newTransactions = Array.from(currentTransactionHistory).slice(0, number_new);
-          console.log('new array length: ', newTransactions.length, '\n new txs');
-          logTransactionDetails(newTransactions);
-          tx_length = currentTransactionHistory.length;
-
-      }
-      // Wait for 20 seconds before fetching the history again
-      setTimeout(() => fetchTransactionHistoryRecursive(wallet, chain, tx_length), 20000);
-  } catch (error) {
-      console.error('Error encountered:', error);
-      setTimeout(() => fetchTransactionHistoryRecursive(wallet, chain, tx_length), 20000);
-  }
 }
 
 async function main() {
     initializeEngine();
     await loadEngineProvider();
     setEngineLoggers();
-    setOnBalanceUpdateCallback(onBalanceUpdateCallback);
-    setOnUTXOMerkletreeScanCallback(onMerkletreeScanCallback);
     const railgunWalletInfo = await createRailgunWallet(encryptionKey, mnemonic, creationBlockNumberMap);
+    console.log(railgunWalletInfo);
     const railgunWalletID = railgunWalletInfo.id; // Store this value.
     const { chain } = NETWORK_CONFIG[NetworkName.Polygon];
+
+    const txidVersion = TXIDVersion.V2_PoseidonMerkle;
+    const wallet = walletForID(railgunWalletID);
+    let tx_info: TxInfo = { length: 0 };
+    await wallet.getTokenBalances(txidVersion, chain, false); // onlySpendable
+  
+    setOnBalanceUpdateCallback((balancesFormatted) => onBalanceUpdateCallback(balancesFormatted, wallet, chain, tx_info));
+    setOnUTXOMerkletreeScanCallback(onMerkletreeScanCallback);
     
-    
-    
-    const refreshAndCheckTransactions = async () => {
-
-      await refreshBalances(chain, undefined);
-      console.log('----------BALANCES REFRESHED----------');
-
-      const txidVersion = TXIDVersion.V2_PoseidonMerkle;
-      const wallet = walletForID(railgunWalletID);
-      await wallet.getTokenBalances(txidVersion, chain, false); // onlySpendable
-
-      let tx_length:number = 0; 
-      fetchTransactionHistoryRecursive(wallet, chain, tx_length);
-
-  };
-  // Initial check
-  await refreshAndCheckTransactions();
-
-  let tx_history = await getWalletTransactionHistory(chain, railgunWalletID, undefined)
-  console.log('tx_history: ', tx_history);
-
-  console.log(railgunWalletInfo);
-
-}
+    await refreshBalances(chain, undefined);
+    console.log('----------BALANCES REFRESHED----------');
+  };  
 
 main().catch(console.error);
