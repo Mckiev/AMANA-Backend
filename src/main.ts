@@ -1,6 +1,6 @@
 import { Mnemonic, randomBytes, formatUnits} from 'ethers';
 import {loadProvider, createRailgunWallet, walletForID, setOnUTXOMerkletreeScanCallback,
-  setOnBalanceUpdateCallback, refreshBalances, setLoggers, startRailgunEngine, getWalletTransactionHistory} from '@railgun-community/wallet';
+  setOnBalanceUpdateCallback, refreshBalances, setLoggers, startRailgunEngine} from '@railgun-community/wallet';
 import { NetworkName, NETWORK_CONFIG,   MerkletreeScanUpdateEvent,
   RailgunBalancesEvent, FallbackProviderJsonConfig, Chain} from '@railgun-community/shared-models';
 import {POIList, TXIDVersion, AbstractWallet} from '@railgun-community/engine';
@@ -111,13 +111,13 @@ const loadEngineProvider = async () => {
     "providers": [
       // The following are example providers. Use your preferred providers here.
       {
-        "provider": polygonInfuraApi,
-        "priority": 1,
+        "provider": "https://1rpc.io/matic",
+        "priority": 2,
         "weight": 1
       },
       {
         "provider": "https://polygon-bor.publicnode.com",
-        "priority": 2,
+        "priority": 1,
         "weight": 1
       },
     ]
