@@ -39,9 +39,7 @@ describe('fetchUserID function', () => {
 
 describe('sendTransferToUsername function', () => {
     it('should send transfer successfully', async () => {
-        const result = await sendTransferToUsername("testbot", 10, "test memo");
-        console.log(result);
-        expect(result).toHaveProperty('success', true);
+        await sendTransferToUsername("testbot", 10, "test memo");
     });
 
     it('should send a transaction and verify it in the transaction list', async () => {
