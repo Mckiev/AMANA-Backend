@@ -1,8 +1,8 @@
 import * as dotenv from 'dotenv';
 import { isObjectRecord } from './types';
 dotenv.config();
-const apiKey = process.env.MANIFOLD_BOT_API_KEY;
-const mckievAPIKey = process.env.MANIFOLD_MCKIEV_API_KEY;
+const apiKey = process.env.MANIFOLD_BOT_API_KEY ?? '';
+const mckievAPIKey = process.env.MANIFOLD_MCKIEV_API_KEY ?? '';
 
 type ManifoldTransfer = {
   from: string;
@@ -100,14 +100,15 @@ export async function fetchUserID(username: string): Promise<string> {
     return userData.id;
   }
 
-export async function sendTransferToUsername(recipientUsername: string, amount: number, memo: string): Promise<undefined> {
+// Sends transfer to username
+export async function sendTransferToUsername(recipientUsername: string, amount: number, memo: string, from_api_key: string = mckievAPIKey): Promise<undefined> {
     
     const recipientUserId = await fetchUserID(recipientUsername);
     
     const managramResponse = await fetch('https://api.manifold.markets/v0/managram', {
       method: 'POST',
       headers: {
-        'Authorization': `Key ${mckievAPIKey}`,
+        'Authorization': `Key ${from_api_key}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
@@ -135,3 +136,11 @@ export async function sendTransferToUsername(recipientUsername: string, amount: 
     }
   }
   
+  // Makes a bet : Buys a number of YES or NO shares for the given market and amount
+
+
+
+  // Sells a number of YES or NO shares for the given market and amount
+
+
+  // 
