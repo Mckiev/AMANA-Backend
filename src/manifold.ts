@@ -109,11 +109,11 @@ export async function sendTransferToUsername(recipientUsername: string, amount: 
   }
   
 // Makes a bet : Buys a number of YES or NO shares for the given market and amount
-export async function buyShares(marketID: string, yes_or_no: ShareType, amount: number): Promise<undefined> {
+export async function buyShares(marketID: string, yes_or_no: ShareType, amount: number, from_api_key: string = apiKey): Promise<undefined> {
   const buySharesResponse = await fetch(`https://api.manifold.markets/v0/bet`, {
     method: 'POST',
     headers: {
-      'Authorization': `Key ${apiKey}`,
+      'Authorization': `Key ${from_api_key}`,
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
