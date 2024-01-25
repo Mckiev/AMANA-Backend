@@ -28,7 +28,7 @@ export const isManifoldTransaction = (value: unknown): value is ManifoldTransact
     && typeof value.data.message === 'string'
 );
 
-export type UserData = {
+type UserData = {
   id: string;
 };
 
@@ -37,6 +37,14 @@ export const isUserData = (value: unknown): value is UserData => (
     && typeof value.id === 'string'
 );
 
+type MarketData = {
+  id: string;
+}
+
+export const isMarketData = (value: unknown): value is MarketData => (
+  isObjectRecord(value)
+    && typeof value.id === 'string'
+);
 
 export type ResponseJson = {
   success: boolean;

@@ -3,6 +3,7 @@ import {ManifoldTransfer,
   isManifoldTransaction,
   isUserData,
   isResponseJson,
+  isMarketData,
 } from '../src/types';
 
 dotenv.config();
@@ -109,26 +110,27 @@ export async function sendTransferToUsername(recipientUsername: string, amount: 
   // Sells a number of YES or NO shares for the given market and amount
 
 
-  // // Fetches market ID by it's slug
-  // export async function fetchMarketID(market_slug: string): Promise<string> {
-  //   const marketDataResponse = await fetch(`https://api.manifold.markets/v0/user/${market_slug}`, {
-  //       method: 'GET',
-  //       headers: {
-  //         'Authorization': `Key ${apiKey}`,
-  //         'Content-Type': 'application/json'
-  //       }
-  //     });
+  // Fetches market ID by it's slug
+  export async function fetchMarketID(market_slug: string): Promise<string> {
+    const marketDataResponse = await fetch(`https://api.manifold.markets/v0/slug/${market_slug}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Key ${apiKey}`,
+          'Content-Type': 'application/json'
+        }
+      });
     
-  //     if (!marketDataResponse.ok) {
-  //       throw new Error(`Error fetching market ID: ${marketDataResponse.status}`);
-  //     }
+      if (!marketDataResponse.ok) {
+        throw new Error(`Error fetching market ID: ${marketDataResponse.status}`);
+      }
   
-  //     const marketData= await marketDataResponse.json();
-  //     if (!isMarketData(marketData)) {
-  //       throw new Error('Unexpected market data type returned from Manifold API');
-  //     }
-  //     return marketData.id;
-  //   } 
+      const marketData= await marketDataResponse.json();
+      if (!isMarketData(marketData)) {
+        throw new Error('Unexpected market data type returned from Manifold API');
+
+      }
+      return marketData.id;
+    } 
 
 
 

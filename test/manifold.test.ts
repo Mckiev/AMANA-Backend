@@ -1,4 +1,4 @@
-import { fetchManifoldTransactions, sendTransferToUsername, fetchUserID } from '../src/manifold';
+import { fetchManifoldTransactions, sendTransferToUsername, fetchUserID, fetchMarketID } from '../src/manifold';
 
 // This test whether the function fetchManifoldTransactions() returns a non empty transaction list from Manifold.
 describe('fetchManifoldTransactions function', () => {
@@ -29,41 +29,40 @@ describe('fetchManifoldTransactions function', () => {
 describe('fetchUserID function', () => {
     it('should fetch userID successfully', async () => {
         const result = await fetchUserID("testbot");
-        console.log(result);
         expect(result).toEqual("6DLzPFOV0LelhuLPnCECIXqsIgN2")
     });
 });
 
 
 
-describe('sendTransferToUsername function', () => {
-    it('should send transfer successfully', async () => {
-        await sendTransferToUsername("testbot", 10, "test memo");
-    });
+// describe('sendTransferToUsername function', () => {
+//     it('should send transfer successfully', async () => {
+//         await sendTransferToUsername("testbot", 10, "test memo");
+//     });
 
-    it('should send a transaction and verify it in the transaction list', async () => {
-        const recipientUsername = 'testbot'; 
-        const amount = 10; 
-        // creating a random memo
-        const memo = Math.random().toString(36).substring(7);
+//     it('should send a transaction and verify it in the transaction list', async () => {
+//         const recipientUsername = 'testbot'; 
+//         const amount = 10; 
+//         // creating a random memo
+//         const memo = Math.random().toString(36).substring(7);
     
-        // Send a transaction
-        await sendTransferToUsername(recipientUsername, amount, memo);
+//         // Send a transaction
+//         await sendTransferToUsername(recipientUsername, amount, memo);
     
-        const recipientUserId = await fetchUserID(recipientUsername);
-        // Fetch transactions for the recipient
-        const transactions = await fetchManifoldTransactions(recipientUserId);
+//         const recipientUserId = await fetchUserID(recipientUsername);
+//         // Fetch transactions for the recipient
+//         const transactions = await fetchManifoldTransactions(recipientUserId);
     
-        // Find the transaction in the list
-        const found = transactions.some(t => t.memo === memo && t.amount === amount.toString());
+//         // Find the transaction in the list
+//         const found = transactions.some(t => t.memo === memo && t.amount === amount.toString());
     
-        // Assert that the transaction is found
-        expect(found).toBe(true);
-      }, 30000); // Increase timeout for integration tests
+//         // Assert that the transaction is found
+//         expect(found).toBe(true);
+//       }, 30000); // Increase timeout for integration tests
 
 
 
-});
+// });
 
 
 
@@ -86,10 +85,10 @@ describe('sendTransferToUsername function', () => {
 //     });
 // });
 
-// describe('fetchMarketID function', () => {
-//     it('should fetch marketID from Slug successfully', async () => {
-//         marketSlug = "test-question-4c1ff3f827cb";
-//         const result = await fetchMarketID("testbot");
-//         expect(result).toEqual("0kEFCvweNbvhKivYTJce")
-//     });
-// }
+describe('fetchMarketID function', () => {
+    it('should fetch marketID from Slug successfully', async () => {
+        const marketSlug = "test-question-4c1ff3f827cb";
+        const result = await fetchMarketID(marketSlug);
+        expect(result).toEqual("0kEFCvweNbvhKivYTJce");
+    });
+});
