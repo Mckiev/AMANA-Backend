@@ -107,10 +107,10 @@ export async function sendTransferToUsername(recipientUsername: string, amount: 
       throw new Error('Failed to send Manifold transfer');
     }
   }
+
   
-// Makes a bet : Buys a number of YES or NO shares for the given market and amount
-export async function buyShares(marketID: string, yes_or_no: ShareType, amount: number, from_api_key: string = apiKey): Promise<undefined> {
-  const buySharesResponse = await fetch(`https://api.manifold.markets/v0/bet`, {
+export async function tradeShares(marketID: string, yes_or_no: ShareType, amount: number, from_api_key: string = apiKey): Promise<undefined> {
+  const tradeSharesResponse = await fetch(`https://api.manifold.markets/v0/bet`, {
     method: 'POST',
     headers: {
       'Authorization': `Key ${from_api_key}`,
@@ -123,14 +123,14 @@ export async function buyShares(marketID: string, yes_or_no: ShareType, amount: 
     })
   });
 
-  if (!buySharesResponse.ok) {
+  if (!tradeSharesResponse.ok) {
     // Log or capture the error response body
-    const errorBody = await buySharesResponse.json();
+    const errorBody = await tradeSharesResponse.json();
     console.error('Error response body:', errorBody);
-    throw new Error(`Error buying shares: ${buySharesResponse.status} - ${errorBody.message}`);
+    throw new Error(`Error buying shares: ${tradeSharesResponse.status} - ${errorBody.message}`);
   }
 
-  const json: BetResponseJson = await buySharesResponse.json();
+  const json: BetResponseJson = await tradeSharesResponse.json();
 
   console.log(json);
   if (!isBetResponseJson(json)) {
@@ -142,9 +142,6 @@ export async function buyShares(marketID: string, yes_or_no: ShareType, amount: 
   }
   
 }
-
-
-// Sells a number of YES or NO shares for the given market and amount
 
 // Fetches market ID by it's slug
 export async function fetchMarketID(market_slug: string): Promise<string> {

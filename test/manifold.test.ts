@@ -1,4 +1,4 @@
-import { fetchManifoldTransactions, sendTransferToUsername, fetchUserID, fetchMarketID, buyShares } from '../src/manifold';
+import { fetchManifoldTransactions, sendTransferToUsername, fetchUserID, fetchMarketID, tradeShares } from '../src/manifold';
 import { ShareType } from '../src/types';
 // This test whether the function fetchManifoldTransactions() returns a non empty transaction list from Manifold.
 describe('fetchManifoldTransactions function', () => {
@@ -35,55 +35,44 @@ describe('fetchUserID function', () => {
 
 
 
-// describe('sendTransferToUsername function', () => {
-//     it('should send transfer successfully', async () => {
-//         await sendTransferToUsername("testbot", 10, "test memo");
-//     });
-
-//     it('should send a transaction and verify it in the transaction list', async () => {
-//         const recipientUsername = 'testbot'; 
-//         const amount = 10; 
-//         // creating a random memo
-//         const memo = Math.random().toString(36).substring(7);
-    
-//         // Send a transaction
-//         await sendTransferToUsername(recipientUsername, amount, memo);
-    
-//         const recipientUserId = await fetchUserID(recipientUsername);
-//         // Fetch transactions for the recipient
-//         const transactions = await fetchManifoldTransactions(recipientUserId);
-    
-//         // Find the transaction in the list
-//         const found = transactions.some(t => t.memo === memo && t.amount === amount.toString());
-    
-//         // Assert that the transaction is found
-//         expect(found).toBe(true);
-//       }, 30000); // Increase timeout for integration tests
-
-
-
-// });
-
-
-
-describe('buyShares function', () => {
-    it('should buy shares successfully', async () => {
-        const marketID = "0kEFCvweNbvhKivYTJce";
-        const yes_or_no = ShareType.yes;
-        const mana_amount = 10;
-        await buyShares(marketID, yes_or_no, mana_amount);
+describe('sendTransferToUsername function', () => {
+    it('should send transfer successfully', async () => {
+        await sendTransferToUsername("testbot", 10, "test memo");
     });
+
+    it('should send a transaction and verify it in the transaction list', async () => {
+        const recipientUsername = 'testbot'; 
+        const amount = 10; 
+        // creating a random memo
+        const memo = Math.random().toString(36).substring(7);
+    
+        // Send a transaction
+        await sendTransferToUsername(recipientUsername, amount, memo);
+    
+        const recipientUserId = await fetchUserID(recipientUsername);
+        // Fetch transactions for the recipient
+        const transactions = await fetchManifoldTransactions(recipientUserId);
+    
+        // Find the transaction in the list
+        const found = transactions.some(t => t.memo === memo && t.amount === amount.toString());
+    
+        // Assert that the transaction is found
+        expect(found).toBe(true);
+      }, 30000); // Increase timeout for integration tests
+
 });
 
 
-// describe('sellShares function', () => {
-//     it('should sell shares successfully', async () => {
-//         marketID = "0kEFCvweNbvhKivYTJce";
-//         yes_or_no = ShareType.yes;
-//         mana_amount = 10;
-//         await sellShares(marketID, yes_or_no, mana_amount);
-//     });
-// });
+
+describe('tradeShares function', () => {
+    it('should buy shares successfully', async () => {
+        const marketID = "0kEFCvweNbvhKivYTJce";
+        const yes_or_no = ShareType.no;
+        const mana_amount = 10;
+        await tradeShares(marketID, yes_or_no, mana_amount);
+    });
+});
+
 
 describe('fetchMarketID function', () => {
     it('should fetch marketID from Slug successfully', async () => {
