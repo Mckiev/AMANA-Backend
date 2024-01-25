@@ -1,6 +1,5 @@
 import { fetchManifoldTransactions, sendTransferToUsername, fetchUserID } from '../src/manifold';
 
-
 // This test whether the function fetchManifoldTransactions() returns a non empty transaction list from Manifold.
 describe('fetchManifoldTransactions function', () => {
     it('should fetch transactions successfully with the correct structure', async () => {
@@ -65,3 +64,32 @@ describe('sendTransferToUsername function', () => {
 
 
 });
+
+
+
+// describe('buyShares function', () => {
+//     it('should buy shares successfully', async () => {
+//         marketID = "0kEFCvweNbvhKivYTJce";
+//         yes_or_no = ShareType.yes;
+//         mana_amount = 10;
+//         await buyShares(marketID, yes_or_no, mana_amount);
+//     });
+// });
+
+
+// describe('sellShares function', () => {
+//     it('should sell shares successfully', async () => {
+//         marketID = "0kEFCvweNbvhKivYTJce";
+//         yes_or_no = ShareType.yes;
+//         mana_amount = 10;
+//         await sellShares(marketID, yes_or_no, mana_amount);
+//     });
+// });
+
+// describe('fetchMarketID function', () => {
+//     it('should fetch marketID from Slug successfully', async () => {
+//         marketSlug = "test-question-4c1ff3f827cb";
+//         const result = await fetchMarketID("testbot");
+//         expect(result).toEqual("0kEFCvweNbvhKivYTJce")
+//     });
+// }
