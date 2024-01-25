@@ -3,7 +3,11 @@ import {ManifoldTransfer,
   isManifoldTransaction,
   isUserData,
   isResponseJson,
+  isBetResponseJson,
   isMarketData,
+  ShareType,
+  BetResponseJson,
+  ResponseJson,
 } from '../src/types';
 
 dotenv.config();
@@ -35,6 +39,7 @@ export async function  fetchManifoldTransactions(userID: string = "6DLzPFOV0Lelh
     try {
       const response = await fetch(url, { headers });
       if (!response.ok) {
+        console.log('url and headers were: ', url, headers)
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       return  parseManifoldTransfers(await response.json());
@@ -92,7 +97,7 @@ export async function sendTransferToUsername(recipientUsername: string, amount: 
         throw new Error(`Error sending managram: ${managramResponse.status} - ${errorBody.message}`);
     }
 
-    const json = await managramResponse.json();
+    const json: ResponseJson = await managramResponse.json();
 
     if (!isResponseJson(json)) {
       throw new Error('Unexpected response type returned from Manifold API');
@@ -103,34 +108,65 @@ export async function sendTransferToUsername(recipientUsername: string, amount: 
     }
   }
   
-  // Makes a bet : Buys a number of YES or NO shares for the given market and amount
+// Makes a bet : Buys a number of YES or NO shares for the given market and amount
+export async function buyShares(marketID: string, yes_or_no: ShareType, amount: number): Promise<undefined> {
+  const buySharesResponse = await fetch(`https://api.manifold.markets/v0/bet`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Key ${apiKey}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      contractId: marketID,
+      outcome: yes_or_no,
+      amount: amount,
+    })
+  });
 
+  if (!buySharesResponse.ok) {
+    // Log or capture the error response body
+    const errorBody = await buySharesResponse.json();
+    console.error('Error response body:', errorBody);
+    throw new Error(`Error buying shares: ${buySharesResponse.status} - ${errorBody.message}`);
+  }
 
+  const json: BetResponseJson = await buySharesResponse.json();
 
-  // Sells a number of YES or NO shares for the given market and amount
+  console.log(json);
+  if (!isBetResponseJson(json)) {
+    throw new Error('Unexpected response type returned from Manifold API');
+  }
 
-
-  // Fetches market ID by it's slug
-  export async function fetchMarketID(market_slug: string): Promise<string> {
-    const marketDataResponse = await fetch(`https://api.manifold.markets/v0/slug/${market_slug}`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Key ${apiKey}`,
-          'Content-Type': 'application/json'
-        }
-      });
-    
-      if (!marketDataResponse.ok) {
-        throw new Error(`Error fetching market ID: ${marketDataResponse.status}`);
-      }
+  if (!json.isFilled) {
+    throw new Error('Failed to buy shares');
+  }
   
-      const marketData= await marketDataResponse.json();
-      if (!isMarketData(marketData)) {
-        throw new Error('Unexpected market data type returned from Manifold API');
+}
 
+
+// Sells a number of YES or NO shares for the given market and amount
+
+// Fetches market ID by it's slug
+export async function fetchMarketID(market_slug: string): Promise<string> {
+  const marketDataResponse = await fetch(`https://api.manifold.markets/v0/slug/${market_slug}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Key ${apiKey}`,
+        'Content-Type': 'application/json'
       }
-      return marketData.id;
-    } 
+    });
+  
+    if (!marketDataResponse.ok) {
+      throw new Error(`Error fetching market ID: ${marketDataResponse.status}`);
+    }
+
+    const marketData= await marketDataResponse.json();
+    if (!isMarketData(marketData)) {
+      throw new Error('Unexpected market data type returned from Manifold API');
+
+    }
+    return marketData.id;
+  } 
 
 
 

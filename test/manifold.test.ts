@@ -1,5 +1,5 @@
-import { fetchManifoldTransactions, sendTransferToUsername, fetchUserID, fetchMarketID } from '../src/manifold';
-
+import { fetchManifoldTransactions, sendTransferToUsername, fetchUserID, fetchMarketID, buyShares } from '../src/manifold';
+import { ShareType } from '../src/types';
 // This test whether the function fetchManifoldTransactions() returns a non empty transaction list from Manifold.
 describe('fetchManifoldTransactions function', () => {
     it('should fetch transactions successfully with the correct structure', async () => {
@@ -66,14 +66,14 @@ describe('fetchUserID function', () => {
 
 
 
-// describe('buyShares function', () => {
-//     it('should buy shares successfully', async () => {
-//         marketID = "0kEFCvweNbvhKivYTJce";
-//         yes_or_no = ShareType.yes;
-//         mana_amount = 10;
-//         await buyShares(marketID, yes_or_no, mana_amount);
-//     });
-// });
+describe('buyShares function', () => {
+    it('should buy shares successfully', async () => {
+        const marketID = "0kEFCvweNbvhKivYTJce";
+        const yes_or_no = ShareType.yes;
+        const mana_amount = 10;
+        await buyShares(marketID, yes_or_no, mana_amount);
+    });
+});
 
 
 // describe('sellShares function', () => {

@@ -50,13 +50,22 @@ export type ResponseJson = {
   success: boolean;
 };
 
+export type BetResponseJson = {
+  isFilled: boolean;
+};
+
 export const isResponseJson = (value: unknown): value is ResponseJson => (
   isObjectRecord(value)
     && typeof value.success === 'boolean'
 );
 
+export const isBetResponseJson = (value: unknown): value is ResponseJson => (
+  isObjectRecord(value)
+    && typeof value.isFilled === 'boolean'
+);
+
 // defines enum for 'yes' and 'no' values
 export enum ShareType {
-  yes = 'yes',
-  no = 'no',
-}
+  yes = 'YES',
+  no = 'NO',
+};
