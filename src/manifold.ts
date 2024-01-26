@@ -46,9 +46,9 @@ export async function  fetchManifoldTransactions(userID: string = "6DLzPFOV0Lelh
     } catch (error) {
       console.error('Error fetching managrams:', error);
       throw error;
-    };
+    }
 
-};
+}
 
 // Fetches userID by username
 

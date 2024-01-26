@@ -68,4 +68,4 @@ export const isBetResponseJson = (value: unknown): value is ResponseJson => (
 export enum ShareType {
   yes = 'YES',
   no = 'NO',
-};
+}

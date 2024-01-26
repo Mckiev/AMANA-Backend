@@ -1,0 +1,23 @@
+name: Test
+
+on: [pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      MANIFOLD_BOT_API_KEY: ${{ secrets.MANIFOLD_BOT_API_KEY }}
+      MANIFOLD_MCKIEV_API_KEY: ${{ secrets.MANIFOLD_MCKIEV_API_KEY }}
+      TEST_MNEMONIC: ${{ secrets.TEST_MNEMONIC }}
+
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-node@v3
+      with:
+        node-version: '18.19.0'
+      
+    - name: Install
+      run: npm ci
+
+    - name: Test
+      run: npm test
