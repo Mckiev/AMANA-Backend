@@ -27,7 +27,7 @@ export async function fetchTransactionHistory(wallet:AbstractWallet, chain: Chai
         const currentTransactionHistory = await wallet.getTransactionHistory(chain, undefined);
         if (currentTransactionHistory.length > tx_info.length) {
             console.log('New transaction[s] detected!');
-            let number_new = currentTransactionHistory.length - tx_info.length;
+            const number_new = currentTransactionHistory.length - tx_info.length;
             console.log('Number of new transactions:', number_new);
             const newTransactions = Array.from(currentTransactionHistory).slice(0, number_new);
             logTransactionDetails(newTransactions);

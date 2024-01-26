@@ -1,4 +1,4 @@
-import { Mnemonic, randomBytes, formatUnits} from 'ethers';
+import { Mnemonic, randomBytes } from 'ethers';
 import {loadProvider, createRailgunWallet, walletForID, setOnUTXOMerkletreeScanCallback,
   setOnBalanceUpdateCallback, refreshBalances, setLoggers, startRailgunEngine} from '@railgun-community/wallet';
 import { NetworkName, NETWORK_CONFIG,   MerkletreeScanUpdateEvent,
@@ -8,7 +8,7 @@ import "fake-indexeddb/auto";
 import Level from 'leveldown';
 import { createArtifactStore } from './create-artifact-store'; 
 import * as dotenv from 'dotenv';
-import {logTransactionDetails, fetchTransactionHistory, TxInfo} from './utils';
+import {fetchTransactionHistory, TxInfo} from './utils';
 
 type MapType<T> = {
   [key in NetworkName]?: T;
@@ -18,7 +18,7 @@ dotenv.config();
 
 type Optional<T> = T | null | undefined;
 
-const polygonInfuraApi = process.env.POLYGON_INFURA_API ?? '';
+// const polygonInfuraApi = process.env.POLYGON_INFURA_API ?? '';
 
 // TODO will need to generate is safely in the future
 const encryptionKey: string = '0101010101010101010101010101010101010101010101010101010101010101';
@@ -26,8 +26,8 @@ const encryptionKey: string = '0101010101010101010101010101010101010101010101010
 const mnemonic:string = process.env.TEST_MNEMONIC ?? Mnemonic.fromEntropy(randomBytes(16)).phrase;
 
 const setEngineLoggers = () => {
-  const logMessage: Optional<(msg: any) => void> = console.log;
-  const logError: Optional<(err: any) => void> = console.error;
+  const logMessage: Optional<(msg: unknown) => void> = console.log;
+  const logError: Optional<(err: unknown) => void> = console.error;
   
   setLoggers(logMessage, logError);
 }
@@ -125,12 +125,11 @@ const loadEngineProvider = async () => {
 
   const shouldDebug = 1;
 
-  const { feesSerialized } = await loadProvider(
-        POLYGON_PROVIDERS_JSON,
-        NetworkName.Polygon,
-        shouldDebug,
-        );
-
+  await loadProvider(
+    POLYGON_PROVIDERS_JSON,
+    NetworkName.Polygon,
+    shouldDebug,
+  );
 }
 
 async function main() {
@@ -144,7 +143,7 @@ async function main() {
 
     const txidVersion = TXIDVersion.V2_PoseidonMerkle;
     const wallet = walletForID(railgunWalletID);
-    let tx_info: TxInfo = { length: 0 };
+    const tx_info: TxInfo = { length: 0 };
     await wallet.getTokenBalances(txidVersion, chain, false); // onlySpendable
   
     setOnBalanceUpdateCallback((balancesFormatted) => onBalanceUpdateCallback(balancesFormatted, wallet, chain, tx_info));
@@ -152,6 +151,6 @@ async function main() {
     
     await refreshBalances(chain, undefined);
     console.log('----------BALANCES REFRESHED----------');
-  };  
+  }  
 
 main().catch(console.error);
