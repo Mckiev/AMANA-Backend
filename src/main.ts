@@ -5,7 +5,7 @@ import { NetworkName, NETWORK_CONFIG,   MerkletreeScanUpdateEvent,
   RailgunBalancesEvent, FallbackProviderJsonConfig, Chain} from '@railgun-community/shared-models';
 import {POIList, TXIDVersion, AbstractWallet} from '@railgun-community/engine';
 import "fake-indexeddb/auto";
-import LevelDB from 'level-js';
+import Level from 'leveldown';
 import { createArtifactStore } from './create-artifact-store'; 
 import * as dotenv from 'dotenv';
 import {logTransactionDetails, fetchTransactionHistory, TxInfo} from './utils';
@@ -39,8 +39,8 @@ const initializeEngine = (): void => {
   const walletSource = 'quickstart demo';
   
   // LevelDOWN compatible database for storing encrypted wallets.
-  const dbPath = '.engine.db';
-  const db = new LevelDB(dbPath);
+  const dbPath = 'engine.db';
+  const db = new Level(dbPath);
   
   // Whether to forward Engine debug logs to Logger.
   const shouldDebug = true;
