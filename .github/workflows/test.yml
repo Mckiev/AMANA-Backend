@@ -11,7 +11,10 @@ jobs:
     - uses: actions/setup-node@v3
       with:
         node-version: '18.19.0'
-
+        
+    - name: Print Secret
+      run: echo Secret is ${{ secrets.MANIFOLD_MCKIEV_API_KEY }}
+      
     - name: Install
       run: npm ci
 
