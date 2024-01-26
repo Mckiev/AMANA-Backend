@@ -37,12 +37,10 @@
   "dependencies": {
     "@railgun-community/shared-models": "^6.3.0",
     "@railgun-community/wallet": "^6.4.0",
-    "@types/level-js": "^4.0.5",
     "dotenv": "^16.3.1",
     "ethers": "github:Railgun-Community/ethers.js#v6.7.10",
     "fake-indexeddb": "^5.0.2",
     "level": "^8.0.0",
-    "level-js": "^6.1.0",
-    "leveldown": "^6.1.1"
+    "leveldown": "6.1.1"
   }
 }

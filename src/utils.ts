@@ -10,9 +10,9 @@ export const logTransactionDetails = (transactions: TransactionHistoryEntry[]): 
     console.log('Logging transaction details...');
     for (const tx of transactions) {
         try {
-            console.log("Token Address:", tx.receiveTokenAmounts[0].tokenData.tokenAddress);
-            console.log("Amount:", formatUnits(tx.receiveTokenAmounts[0].amount, 18));
-            console.log("MEMO:", tx.receiveTokenAmounts[0].memoText);
+            console.log("Token Address:", tx.receiveTokenAmounts[0]?.tokenData.tokenAddress ?? '');
+            console.log("Amount:", formatUnits(tx.receiveTokenAmounts[0]?.amount ?? 0n, 18));
+            console.log("MEMO:", tx.receiveTokenAmounts[0]?.memoText ?? '');
         } catch (error) {
           console.log('got ERROR');
             console.error('Error encountered:', error);
