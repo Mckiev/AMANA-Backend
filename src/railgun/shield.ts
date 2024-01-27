@@ -49,8 +49,8 @@ export const shieldAmana = async (
     fromWalletAddress,
   );
 
-  const maxFeePerGas = 1048576n; // TODO: Proper estimation of network gasPrice
-  const maxPriorityFeePerGas = 1048576n; // TODO: Proper estimation of network gasPrice
+  const maxFeePerGas = 50000000000n; // TODO: Proper estimation of network gasPrice
+  const maxPriorityFeePerGas = 2000000000n; // TODO: Proper estimation of network gasPrice
   const gasDetails: TransactionGasDetails = {
     evmGasType: EVMGasType.Type2,
     gasEstimate,
@@ -70,5 +70,15 @@ export const shieldAmana = async (
 
   console.log('Sending transaction', transaction);
 
-  wallet.sendTransaction(transaction);
+  try {
+    // Send transaction
+    const tx = await wallet.sendTransaction(transaction);
+
+    // Wait for transaction to be mined
+    await tx.wait();
+
+    console.log(`Transaction successful with hash: ${tx.hash}`);
+  } catch (error) {
+    console.error(`Transaction failed: ${error}`);
+}
 }
