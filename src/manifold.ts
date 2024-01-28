@@ -14,8 +14,17 @@ dotenv.config();
 const apiKey = process.env.MANIFOLD_BOT_API_KEY ?? '';
 const mckievAPIKey = process.env.MANIFOLD_MCKIEV_API_KEY ?? '';
 
+export default {
+  fetchTransactions,
+  sendTransfer,
+  tradeShares,
+  getMarketID,
+  getUserID
+}
 
-function parseManifoldTransfers(transactions: unknown[]): ManifoldTransfer[] {
+
+
+function parceTransfer(transactions: unknown[]): ManifoldTransfer[] {
   return transactions.map(transaction => {
     if (!isManifoldTransaction(transaction)) {
       throw new Error('Unexpected transaction type returned from Manifold API');
@@ -29,7 +38,7 @@ function parseManifoldTransfers(transactions: unknown[]): ManifoldTransfer[] {
 }
 
 // Receives user id as an argument, with default value set to my user id.
-export async function  fetchManifoldTransactions(userID: string = "6DLzPFOV0LelhuLPnCECIXqsIgN2" ): Promise<ManifoldTransfer[]> {
+ async function  fetchTransactions(userID: string = "6DLzPFOV0LelhuLPnCECIXqsIgN2" ): Promise<ManifoldTransfer[]> {
     const url = `https://api.manifold.markets/v0/managrams?toId=${userID}`;
     const headers = {
       'Authorization': `Key ${apiKey}`,
@@ -42,7 +51,7 @@ export async function  fetchManifoldTransactions(userID: string = "6DLzPFOV0Lelh
         console.log('url and headers were: ', url, headers)
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      return  parseManifoldTransfers(await response.json());
+      return  parceTransfer(await response.json());
     } catch (error) {
       console.error('Error fetching managrams:', error);
       throw error;
@@ -52,7 +61,7 @@ export async function  fetchManifoldTransactions(userID: string = "6DLzPFOV0Lelh
 
 // Fetches userID by username
 
-export async function fetchUserID(username: string): Promise<string> {
+ async function getUserID(username: string): Promise<string> {
   const userIdResponse = await fetch(`https://api.manifold.markets/v0/user/${username}`, {
       method: 'GET',
       headers: {
@@ -73,9 +82,9 @@ export async function fetchUserID(username: string): Promise<string> {
   }
 
 // Sends transfer to username
-export async function sendTransferToUsername(recipientUsername: string, amount: number, memo: string, from_api_key: string = mckievAPIKey): Promise<undefined> {
+ async function sendTransfer(recipientUsername: string, amount: number, memo: string, from_api_key: string = mckievAPIKey): Promise<undefined> {
     
-    const recipientUserId = await fetchUserID(recipientUsername);
+    const recipientUserId = await getUserID(recipientUsername);
     
     const managramResponse = await fetch('https://api.manifold.markets/v0/managram', {
       method: 'POST',
@@ -109,7 +118,7 @@ export async function sendTransferToUsername(recipientUsername: string, amount: 
   }
 
   
-export async function tradeShares(marketID: string, yes_or_no: ShareType, amount: number, from_api_key: string = apiKey): Promise<undefined> {
+ async function tradeShares(marketID: string, yes_or_no: ShareType, amount: number, from_api_key: string = apiKey): Promise<undefined> {
   const tradeSharesResponse = await fetch(`https://api.manifold.markets/v0/bet`, {
     method: 'POST',
     headers: {
@@ -144,7 +153,7 @@ export async function tradeShares(marketID: string, yes_or_no: ShareType, amount
 }
 
 // Fetches market ID by it's slug
-export async function fetchMarketID(market_slug: string): Promise<string> {
+ async function getMarketID(market_slug: string): Promise<string> {
   const marketDataResponse = await fetch(`https://api.manifold.markets/v0/slug/${market_slug}`, {
       method: 'GET',
       headers: {
@@ -164,6 +173,3 @@ export async function fetchMarketID(market_slug: string): Promise<string> {
     }
     return marketData.id;
   } 
-
-
-
