@@ -1,23 +1,13 @@
-import { Mnemonic, randomBytes } from 'ethers';
 import { TXIDVersion } from '@railgun-community/engine'
 import * as Railgun from './railgun/railgun'
-import * as dotenv from 'dotenv';
-
-
-dotenv.config();
-
-// TODO will need to generate is safely in the future
-const encryptionKey: string = '0101010101010101010101010101010101010101010101010101010101010101';
-
-const mnemonic:string = process.env.TEST_MNEMONIC ?? Mnemonic.fromEntropy(randomBytes(16)).phrase;
-
+import config from './config';
 
 async function main() {
     Railgun.initializeEngine();
     await Railgun.loadEngineProvider();
     Railgun.setEngineLoggers();
     
-    const railgunWalletInfo = await Railgun.createWallet(encryptionKey, mnemonic, Railgun.creationBlockNumberMap);
+    const railgunWalletInfo = await Railgun.createWallet(config.encryptionKey, config.mnemonic, Railgun.creationBlockNumberMap);
     console.log(railgunWalletInfo);
     const wallet = Railgun.walletForID(railgunWalletInfo.id); // Store this value.
 
