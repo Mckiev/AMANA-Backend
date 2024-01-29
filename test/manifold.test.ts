@@ -1,9 +1,8 @@
-import { fetchManifoldTransactions, sendTransferToUsername, fetchUserID, fetchMarketID, tradeShares } from '../src/manifold';
-import { ShareType } from '../src/types';
+import Manifold from '../src/manifold'
 // This test whether the function fetchManifoldTransactions() returns a non empty transaction list from Manifold.
-describe('fetchManifoldTransactions function', () => {
+describe('fetchTransactions function', () => {
     it('should fetch transactions successfully with the correct structure', async () => {
-        const result = await fetchManifoldTransactions();
+        const result = await Manifold.fetchTransactions();
         //receving some array of 2 or more transactions
         expect(Array.isArray(result)).toBe(true);
         expect(result.length).toBeGreaterThan(1);
@@ -26,18 +25,18 @@ describe('fetchManifoldTransactions function', () => {
 
 // testing fetchUserID function
 
-describe('fetchUserID function', () => {
+describe('getUserID function', () => {
     it('should fetch userID successfully', async () => {
-        const result = await fetchUserID("testbot");
+        const result = await Manifold.getUserID("testbot");
         expect(result).toEqual("6DLzPFOV0LelhuLPnCECIXqsIgN2")
     });
 });
 
 
 
-describe('sendTransferToUsername function', () => {
+describe('sendTransfer function', () => {
     it('should send transfer successfully', async () => {
-        await sendTransferToUsername("testbot", 10, "test memo");
+        await Manifold.sendTransfer("testbot", 10, "test memo");
     });
 
     it('should send a transaction and verify it in the transaction list', async () => {
@@ -47,11 +46,11 @@ describe('sendTransferToUsername function', () => {
         const memo = Math.random().toString(36).substring(7);
     
         // Send a transaction
-        await sendTransferToUsername(recipientUsername, amount, memo);
+        await Manifold.sendTransfer(recipientUsername, amount, memo);
     
-        const recipientUserId = await fetchUserID(recipientUsername);
+        const recipientUserId = await Manifold.getUserID(recipientUsername);
         // Fetch transactions for the recipient
-        const transactions = await fetchManifoldTransactions(recipientUserId);
+        const transactions = await Manifold.fetchTransactions(recipientUserId);
     
         // Find the transaction in the list
         const found = transactions.some(t => t.memo === memo && t.amount === amount.toString());
@@ -67,9 +66,9 @@ describe('sendTransferToUsername function', () => {
 describe('tradeShares function', () => {
     it('should buy shares successfully', async () => {
         const marketID = "0kEFCvweNbvhKivYTJce";
-        const yes_or_no = ShareType.no;
+        const yes_or_no = Manifold.ShareType.no;
         const mana_amount = 10;
-        await tradeShares(marketID, yes_or_no, mana_amount);
+        await Manifold.tradeShares(marketID, yes_or_no, mana_amount);
     });
 });
 
@@ -77,7 +76,7 @@ describe('tradeShares function', () => {
 describe('fetchMarketID function', () => {
     it('should fetch marketID from Slug successfully', async () => {
         const marketSlug = "test-question-4c1ff3f827cb";
-        const result = await fetchMarketID(marketSlug);
+        const result = await Manifold.getMarketID(marketSlug);
         expect(result).toEqual("0kEFCvweNbvhKivYTJce");
     });
 });
