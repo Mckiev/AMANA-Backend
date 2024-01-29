@@ -1,5 +1,4 @@
-import Manifold from '../src/manifold';
-import { ShareType } from '../src/types';
+import Manifold from '../src/manifold'
 // This test whether the function fetchManifoldTransactions() returns a non empty transaction list from Manifold.
 describe('fetchTransactions function', () => {
     it('should fetch transactions successfully with the correct structure', async () => {
@@ -67,7 +66,7 @@ describe('sendTransfer function', () => {
 describe('tradeShares function', () => {
     it('should buy shares successfully', async () => {
         const marketID = "0kEFCvweNbvhKivYTJce";
-        const yes_or_no = ShareType.no;
+        const yes_or_no = Manifold.ShareType.no;
         const mana_amount = 10;
         await Manifold.tradeShares(marketID, yes_or_no, mana_amount);
     });

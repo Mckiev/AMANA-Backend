@@ -1,25 +1,85 @@
-import * as dotenv from 'dotenv';
-import {ManifoldTransfer,
-  isManifoldTransaction,
-  isUserData,
-  isResponseJson,
-  isBetResponseJson,
-  isMarketData,
-  ShareType,
-  BetResponseJson,
-  ResponseJson,
-} from '../src/types';
+import config from './config';
 
-dotenv.config();
-const apiKey = process.env.MANIFOLD_BOT_API_KEY ?? '';
-const mckievAPIKey = process.env.MANIFOLD_MCKIEV_API_KEY ?? '';
+type ObjectRecord = Record<string, unknown>;
+
+const isObjectRecord = (value: unknown): value is ObjectRecord => (
+  typeof value === 'object'
+    && !Array.isArray(value)
+    && value !== null
+);
+
+type ManifoldTransfer = {
+  from: string;
+  amount: string;
+  memo: string;
+};
+
+type ManifoldTransactionJSON = {
+  fromId: string;
+  amount: number;
+  data: {
+    message: string;
+  };
+};
+
+const isManifoldTransaction = (value: unknown): value is ManifoldTransactionJSON => (
+  isObjectRecord(value)
+    && typeof value.fromId === 'string'
+    && typeof value.amount === 'number'
+    && isObjectRecord(value.data)
+    && typeof value.data.message === 'string'
+);
+
+type UserData = {
+  id: string;
+};
+
+const isUserData = (value: unknown): value is UserData => (
+  isObjectRecord(value)
+    && typeof value.id === 'string'
+);
+
+type MarketData = {
+  id: string;
+}
+
+const isMarketData = (value: unknown): value is MarketData => (
+  isObjectRecord(value)
+    && typeof value.id === 'string'
+);
+
+type ResponseJson = {
+  success: boolean;
+};
+
+type BetResponseJson = {
+  isFilled: boolean;
+};
+
+const isResponseJson = (value: unknown): value is ResponseJson => (
+  isObjectRecord(value)
+    && typeof value.success === 'boolean'
+);
+const isBetResponseJson = (value: unknown): value is ResponseJson => (
+  isObjectRecord(value)
+    && typeof value.isFilled === 'boolean'
+);
+
+// defines enum for 'yes' and 'no' values
+enum ShareType {
+  yes = 'YES',
+  no = 'NO',
+}
+
+
 
 export default {
   fetchTransactions,
   sendTransfer,
   tradeShares,
   getMarketID,
-  getUserID
+  getUserID,
+  ShareType
 }
 
 
@@ -41,7 +101,7 @@ function parceTransfer(transactions: unknown[]): ManifoldTransfer[] {
  async function  fetchTransactions(userID: string = "6DLzPFOV0LelhuLPnCECIXqsIgN2" ): Promise<ManifoldTransfer[]> {
     const url = `https://api.manifold.markets/v0/managrams?toId=${userID}`;
     const headers = {
-      'Authorization': `Key ${apiKey}`,
+      'Authorization': `Key ${config.apiKey}`,
       'Content-Type': 'application/json'
     };
 
@@ -65,7 +125,7 @@ function parceTransfer(transactions: unknown[]): ManifoldTransfer[] {
   const userIdResponse = await fetch(`https://api.manifold.markets/v0/user/${username}`, {
       method: 'GET',
       headers: {
-        'Authorization': `Key ${apiKey}`,
+        'Authorization': `Key ${config.apiKey}`,
         'Content-Type': 'application/json'
       }
     });
@@ -82,7 +142,7 @@ function parceTransfer(transactions: unknown[]): ManifoldTransfer[] {
   }
 
 // Sends transfer to username
- async function sendTransfer(recipientUsername: string, amount: number, memo: string, from_api_key: string = mckievAPIKey): Promise<undefined> {
+ async function sendTransfer(recipientUsername: string, amount: number, memo: string, from_api_key: string = config.mckievAPIKey): Promise<undefined> {
     
     const recipientUserId = await getUserID(recipientUsername);
     
@@ -118,7 +178,7 @@ function parceTransfer(transactions: unknown[]): ManifoldTransfer[] {
   }
 
   
- async function tradeShares(marketID: string, yes_or_no: ShareType, amount: number, from_api_key: string = apiKey): Promise<undefined> {
+ async function tradeShares(marketID: string, yes_or_no: ShareType, amount: number, from_api_key: string = config.apiKey): Promise<undefined> {
   const tradeSharesResponse = await fetch(`https://api.manifold.markets/v0/bet`, {
     method: 'POST',
     headers: {
@@ -157,7 +217,7 @@ function parceTransfer(transactions: unknown[]): ManifoldTransfer[] {
   const marketDataResponse = await fetch(`https://api.manifold.markets/v0/slug/${market_slug}`, {
       method: 'GET',
       headers: {
-        'Authorization': `Key ${apiKey}`,
+        'Authorization': `Key ${config.apiKey}`,
         'Content-Type': 'application/json'
       }
     });
@@ -172,4 +232,4 @@ function parceTransfer(transactions: unknown[]): ManifoldTransfer[] {
 
     }
     return marketData.id;
-  } 
+  }
