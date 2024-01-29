@@ -2,7 +2,7 @@ import {loadProvider, setLoggers, startRailgunEngine} from '@railgun-community/w
 import{ MerkletreeScanUpdateEvent, RailgunBalancesEvent, Chain, NetworkName, FallbackProviderJsonConfig} from '@railgun-community/shared-models';
 import {POIList, AbstractWallet} from '@railgun-community/engine';
 import Level from 'leveldown';
-import { createArtifactStore } from '../create-artifact-store'; 
+import { createArtifactStore } from './create-artifact-store';
 import {fetchTransactionHistory, TxInfo} from './utils';
 
 type Optional<T> = T | null | undefined;
