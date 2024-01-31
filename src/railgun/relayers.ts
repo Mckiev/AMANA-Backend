@@ -22,20 +22,23 @@ type RelayerDebugger = {
   error: (error: Error) => void;
 };
 
-import('@railgun-community/waku-relayer-client')
-  .then(async ({ WakuRelayerClient }) => { 
+export async function getRelayer(): Promise<SelectedRelayer> {
+
+const { WakuRelayerClient } = await import('@railgun-community/waku-relayer-client');
 
 
-const statusCallback: RelayerConnectionStatusCallback = (
-  chain: Chain,
-  status: RelayerConnectionStatus,
+const statusCallback: RelayerConnectionStatusCallback = async(
+  chain: Chain,  status: RelayerConnectionStatus,
 ) => {
   console.log('Relayer status:', status);
+  if (status === RelayerConnectionStatus.Connected) {
+    connected = true;
+  }
 };
 
 const relayerDebugger: RelayerDebugger = {
   log: (msg: string) => {
-    console.log(msg);
+    // console.log(msg);
   },
   error: (err: Error) => {
     console.error(err);
@@ -85,15 +88,29 @@ const feeTokenAddress = '0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270'; // Address
 // For instance, if you are using a Recipe from the Cookbook. See "Cross-Contract Calls" in the "Transactions" section.
 const useRelayAdapt = false;
 
-const relayer: Optional<SelectedRelayer> =await WakuRelayerClient.findBestRelayer(
-  chain,
-  feeTokenAddress,
-  useRelayAdapt,
-);
 
-console.log(relayer);
-})
-.catch(error => {
-  // Handle any errors during import
-  console.error('Import failed', error);
+let connected: boolean = false;
+return new Promise(async (resolve, reject) => {
+  let timeoutId = setTimeout(() => {
+    clearInterval(checkConnectionInterval); // Clear the interval on timeout
+    reject(new Error("Connection timeout"));
+  }, 60000);
+
+  let checkConnectionInterval = setInterval(async () => {
+    if (connected) {
+      clearTimeout(timeoutId); // Clear the timeout if connected
+      clearInterval(checkConnectionInterval); // Stop checking once we're connected
+      try {
+        const relayer = await WakuRelayerClient.findBestRelayer(
+          chain,
+          feeTokenAddress,
+          useRelayAdapt,
+        );
+        resolve(relayer);
+      } catch (error) {
+        reject(error);
+      }
+    }
+  }, 6000); // Check every second
 });
+}
