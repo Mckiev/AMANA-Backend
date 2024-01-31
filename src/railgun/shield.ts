@@ -11,7 +11,7 @@ import {
   populateShield,
 } from '@railgun-community/wallet';
 import { InfuraProvider, keccak256, Wallet } from 'ethers';
-import config from '../../config';
+import config from '../config';
 
 const AMANA_TOKEN_ADDRESS = '0xb7fa2208b49a65f9b9a85956fad7a3f361b248dd';
 

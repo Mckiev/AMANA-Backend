@@ -1,5 +1,6 @@
 import { Mnemonic, randomBytes } from 'ethers';
 import * as dotenv from 'dotenv';
+import constants from './constants';
 dotenv.config();
 
 // TODO will need to generate this safely in the future
@@ -10,9 +11,12 @@ const mnemonic:string = process.env.TEST_MNEMONIC ?? Mnemonic.fromEntropy(random
 const apiKey = process.env.MANIFOLD_BOT_API_KEY ?? '';
 const mckievAPIKey = process.env.MANIFOLD_MCKIEV_API_KEY ?? '';
 
+const feeToken = constants.TOKENS.WMATIC;
+
 export default {
   mnemonic,
   encryptionKey,
   apiKey,
-  mckievAPIKey
+  mckievAPIKey,
+  feeToken,
 };
