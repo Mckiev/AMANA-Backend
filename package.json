@@ -32,6 +32,7 @@
   },
   "dependencies": {
     "@railgun-community/shared-models": "^6.3.0",
+    "@railgun-community/waku-relayer-client": "^4.7.0",
     "@railgun-community/wallet": "^6.4.0",
     "dotenv": "^16.3.1",
     "ethers": "github:Railgun-Community/ethers.js#v6.7.10",

@@ -5,7 +5,7 @@ import Level from 'leveldown';
 import { createArtifactStore } from './create-artifact-store';
 import {fetchTransactionHistory, TxInfo} from './utils';
 
-type Optional<T> = T | null | undefined;
+export type Optional<T> = T | null | undefined;
 
 type MapType<T> = {
   [key in NetworkName]?: T;
