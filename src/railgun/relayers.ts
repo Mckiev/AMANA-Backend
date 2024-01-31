@@ -4,7 +4,6 @@ import {
   SelectedRelayer,
   RelayerConnectionStatus,
 } from '@railgun-community/shared-models';
-import { Optional } from './engine';
 
 type RelayerConnectionStatusCallback = (
   chain: Chain,
@@ -38,7 +37,7 @@ const statusCallback: RelayerConnectionStatusCallback = async(
 
 const relayerDebugger: RelayerDebugger = {
   log: (msg: string) => {
-    // console.log(msg);
+    console.log(msg);
   },
   error: (err: Error) => {
     console.error(err);
@@ -90,13 +89,13 @@ const useRelayAdapt = false;
 
 
 let connected: boolean = false;
-return new Promise(async (resolve, reject) => {
-  let timeoutId = setTimeout(() => {
+return new Promise((resolve, reject) => {
+  const timeoutId = setTimeout(() => {
     clearInterval(checkConnectionInterval); // Clear the interval on timeout
     reject(new Error("Connection timeout"));
   }, 60000);
 
-  let checkConnectionInterval = setInterval(async () => {
+  const checkConnectionInterval = setInterval(async () => {
     if (connected) {
       clearTimeout(timeoutId); // Clear the timeout if connected
       clearInterval(checkConnectionInterval); // Stop checking once we're connected

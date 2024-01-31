@@ -6,15 +6,13 @@ import {
     EVMGasType,
     FeeTokenDetails,
     SelectedRelayer,
-    getEVMGasTypeForTransaction,
-    calculateGasPrice
   } from '@railgun-community/shared-models';
 import {
   gasEstimateForUnprovenTransfer
 } from '@railgun-community/wallet';
 import { Mnemonic, randomBytes } from 'ethers';
 import { getRelayer } from './relayers';
-import config from '../../config';
+import config from '../config';
 import * as dotenv from 'dotenv';
 dotenv.config();
 import * as Railgun from './railgun';
@@ -78,7 +76,7 @@ async function sendTransfer() {
   const railgunWalletInfo = await Railgun.createWallet(encryptionKey, mnemonic, Railgun.creationBlockNumberMap);
   console.log(railgunWalletInfo);
 
-  const wallet = Railgun.walletForID(railgunWalletInfo.id); // Store this value.
+  // const wallet = Railgun.walletForID(railgunWalletInfo.id); // Store this value.
   const railgunWalletID = railgunWalletInfo.id;
 
   const { gasEstimate } = await gasEstimateForUnprovenTransfer(
@@ -94,7 +92,7 @@ async function sendTransfer() {
     sendWithPublicWallet,
   );
 
-  let gasPrice = 0n;
+  // const gasPrice = 0n;
 
 
 
