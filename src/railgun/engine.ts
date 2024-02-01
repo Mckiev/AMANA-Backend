@@ -1,11 +1,12 @@
-import {loadProvider, setLoggers, startRailgunEngine} from '@railgun-community/wallet';
+import {getProver, loadProvider, setLoggers, startRailgunEngine, SnarkJSGroth16} from '@railgun-community/wallet';
 import{ MerkletreeScanUpdateEvent, RailgunBalancesEvent, Chain, NetworkName, FallbackProviderJsonConfig} from '@railgun-community/shared-models';
 import {POIList, AbstractWallet} from '@railgun-community/engine';
+import { groth16 } from 'snarkjs';
 import Level from 'leveldown';
 import { createArtifactStore } from './create-artifact-store';
 import {fetchTransactionHistory, TxInfo} from './utils';
 
-type Optional<T> = T | null | undefined;
+export type Optional<T> = T | null | undefined;
 
 type MapType<T> = {
   [key in NetworkName]?: T;
@@ -72,6 +73,8 @@ export  const initializeEngine = (): void => {
       customPOILists,
       verboseScanLogging
     )
+    const snarkGroth16: unknown = groth16;
+    getProver().setSnarkJSGroth16(snarkGroth16 as SnarkJSGroth16);
 }
 
 export const onMerkletreeScanCallback = (eventData: MerkletreeScanUpdateEvent) => {
