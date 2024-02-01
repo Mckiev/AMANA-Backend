@@ -12,6 +12,7 @@ const apiKey = process.env.MANIFOLD_BOT_API_KEY ?? '';
 const mckievAPIKey = process.env.MANIFOLD_MCKIEV_API_KEY ?? '';
 
 const feeToken = constants.TOKENS.WMATIC;
+const apiPort = 80;
 
 export default {
   mnemonic,
@@ -19,4 +20,5 @@ export default {
   apiKey,
   mckievAPIKey,
   feeToken,
+  apiPort,
 };
