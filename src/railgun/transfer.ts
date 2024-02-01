@@ -31,13 +31,13 @@ async function sendTransfer() {
 
   // Optional encrypted memo text only readable by the sender and receiver.
   // May include text and emojis. See "Private Transfers" page for details.
-  const memoText = 'Private transfer from Alice to Bob';
+  const memoText = 'Private transfer from Alice to Charlie';
 
   // Formatted token amounts to transfer.
   const erc20AmountRecipients: RailgunERC20AmountRecipient[] = [
     {
       tokenAddress: constants.TOKENS.AMANA,
-      amount: 16n, // hexadecimal amount equivalent to 16
+      amount: 17n, // hexadecimal amount equivalent to 16
       recipientAddress: railgunAddress,
     },
   ];
@@ -73,8 +73,9 @@ async function sendTransfer() {
 
   const railgunWalletInfo = await Railgun.createWallet(config.encryptionKey, config.mnemonic, Railgun.creationBlockNumberMap);
   console.log(railgunWalletInfo);
-
-  // const wallet = Railgun.walletForID(railgunWalletInfo.id); // Store this value.
+  // Need to refresh balances, or wallet may try to spend already spent UTXOs.
+  await Railgun.refreshBalances(Railgun.chain, undefined);
+ 
   const railgunWalletID = railgunWalletInfo.id;
 
   const { gasEstimate } = await gasEstimateForUnprovenTransfer(

@@ -49,7 +49,7 @@ export async function getRelayer(): Promise<SelectedRelayer> {
 
   const relayerDebugger: RelayerDebugger = {
     log: (msg: string) => {
-      // console.log(msg);
+       console.log(msg);
     },
     error: (err: Error) => {
       console.error(err);
