@@ -15,7 +15,7 @@ import config from '../config';
 import * as Railgun from './railgun';
 import constants from '../constants';
 import { Optional } from './engine';
-import { InfuraProvider, Wallet } from 'ethers';
+import { InfuraProvider, Wallet, parseUnits } from 'ethers';
 
 async function sendTransfer() {
   const railgunAddress = '0zk1qyql93qvzye2893gta6y5ha7vq5g25ctnkvnf9mlwjk34pett5utfrv7j6fe3z53lu72huwn80vy3pqt9zrpcuxncuc2tr9p3mv2jtqxkp4hawccfp832zhs6cz';
@@ -38,8 +38,8 @@ async function sendTransfer() {
   const originalGasEstimate = 0n; // Always 0, we don't have this yet.
   
   const evmGasType = EVMGasType.Type2;
-  const maxFeePerGas = 300000000000n;
-  const maxPriorityFeePerGas = 8000000000n;
+  const maxFeePerGas = parseUnits('100', 'gwei');
+  const maxPriorityFeePerGas = parseUnits('50', 'gwei');
 
   const originalGasDetails: TransactionGasDetails = {
     evmGasType, 
@@ -47,8 +47,6 @@ async function sendTransfer() {
     maxFeePerGas,
     maxPriorityFeePerGas
   };
-
-  
 
   Railgun.initializeEngine();
   await Railgun.loadEngineProvider();
@@ -80,10 +78,6 @@ async function sendTransfer() {
     maxFeePerGas,
     maxPriorityFeePerGas
   };
-
-  
-
-
 
   // ONLY required for transactions that are using a Relayer. Can leave undefined if self-signing.
   const overallBatchMinGasPrice: Optional<bigint> = await calculateGasPrice(transactionGasDetails);
@@ -142,8 +136,8 @@ async function sendTransfer() {
     console.log(`Transaction successful with hash: ${tx.hash}`);
   } catch (error) {
     console.error(`Transaction failed: ${error}`);
-}
-console.log('done');
+  }
+  console.log('done');
 }
 
 sendTransfer().catch(console.error);

@@ -22,6 +22,7 @@ import config from '../config';
 import * as Railgun from './railgun';
 import constants from '../constants';
 import { Optional } from './engine';
+import { parseUnits } from 'ethers';
 
 async function sendTransfer() {
   const { RelayerTransaction } = await import('@railgun-community/waku-relayer-client');
@@ -47,8 +48,8 @@ async function sendTransfer() {
   const originalGasEstimate = 0n; // Always 0, we don't have this yet.
   
   const evmGasType = EVMGasType.Type1;
-  const maxFeePerGas = 100000000000n;
-  // const maxPriorityFeePerGas = 2000000000n;
+  const maxFeePerGas = parseUnits('100', 'gwei');
+  // const maxPriorityFeePerGas = parseUnits('50', 'gwei');
 
   const originalGasDetails: TransactionGasDetails = {
     evmGasType, 
