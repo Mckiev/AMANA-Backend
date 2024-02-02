@@ -4,7 +4,6 @@ import {
     TransactionGasDetails,
     RailgunERC20AmountRecipient,
     EVMGasType,
-    calculateGasPrice,
   } from '@railgun-community/shared-models';
 import {
   gasEstimateForUnprovenTransfer,
@@ -14,7 +13,6 @@ import {
 import config from '../config';
 import * as Railgun from './railgun';
 import constants from '../constants';
-import { Optional } from './engine';
 import { InfuraProvider, Wallet, parseUnits } from 'ethers';
 
 async function sendTransfer() {
