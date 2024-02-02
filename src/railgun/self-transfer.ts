@@ -4,7 +4,6 @@ import {
     TransactionGasDetails,
     RailgunERC20AmountRecipient,
     EVMGasType,
-    calculateGasPrice,
   } from '@railgun-community/shared-models';
 import {
   gasEstimateForUnprovenTransfer,
@@ -14,7 +13,6 @@ import {
 import config from '../config';
 import * as Railgun from './railgun';
 import constants from '../constants';
-import { Optional } from './engine';
 import { InfuraProvider, Wallet, parseUnits } from 'ethers';
 
 async function sendTransfer() {
@@ -79,8 +77,6 @@ async function sendTransfer() {
     maxPriorityFeePerGas
   };
 
-  // ONLY required for transactions that are using a Relayer. Can leave undefined if self-signing.
-  const overallBatchMinGasPrice: Optional<bigint> = await calculateGasPrice(transactionGasDetails);
 
   const progressCallback = (progress: number) => {
     console.log(`Transfer proof progress: ${progress}`)

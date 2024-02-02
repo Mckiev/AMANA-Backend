@@ -1,6 +1,6 @@
 import { TXIDVersion } from '@railgun-community/engine'
 import * as Railgun from './railgun/railgun'
-import config from '../config';
+import config from './config';
 
 async function main() {
     Railgun.initializeEngine();
