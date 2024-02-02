@@ -79,8 +79,6 @@ async function sendTransfer() {
     maxPriorityFeePerGas
   };
 
-  // ONLY required for transactions that are using a Relayer. Can leave undefined if self-signing.
-  const overallBatchMinGasPrice: Optional<bigint> = await calculateGasPrice(transactionGasDetails);
 
   const progressCallback = (progress: number) => {
     console.log(`Transfer proof progress: ${progress}`)
