@@ -1,6 +1,6 @@
 import { NETWORK_CONFIG, NetworkName } from '@railgun-community/shared-models';
 
-import { setEngineLoggers, initializeEngine, creationBlockNumberMap, onBalanceUpdateCallback, onMerkletreeScanCallback, loadEngineProvider} from './engine';
+import { setEngineLoggers, initializeEngine, creationBlockNumberMap, onBalanceUpdateCallback, loadEngineProvider} from './engine';
 export { setEngineLoggers, initializeEngine, creationBlockNumberMap, onBalanceUpdateCallback, onMerkletreeScanCallback, loadEngineProvider} from './engine';
 export { TxInfo } from './utils';
 import { TxInfo } from './utils';

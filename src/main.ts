@@ -1,9 +1,7 @@
-import { TXIDVersion } from '@railgun-community/engine'
-import * as Railgun from './railgun/railgun'
-import config from './config';
+import * as Railgun from './railgun/railgun';
 
-async function main() {
-    const wallet = await Railgun.start();
-  }  
+const main = async() => {
+  await Railgun.start();
+};
 
 main().catch(console.error);
