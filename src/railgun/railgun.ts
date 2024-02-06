@@ -2,7 +2,7 @@ import { NETWORK_CONFIG, NetworkName } from '@railgun-community/shared-models';
 
 import { setEngineLoggers, initializeEngine, creationBlockNumberMap, onBalanceUpdateCallback, loadEngineProvider} from './engine';
 export { setEngineLoggers, initializeEngine, creationBlockNumberMap, onBalanceUpdateCallback, onMerkletreeScanCallback, loadEngineProvider} from './engine';
-export { TxInfo } from './utils';
+export { TxInfo, extractZKaddress } from './utils';
 import { TxInfo } from './utils';
 export { createRailgunWallet as createWallet, walletForID, setOnBalanceUpdateCallback, refreshBalances} from '@railgun-community/wallet';
 import { createRailgunWallet as createWallet, walletForID, setOnBalanceUpdateCallback, refreshBalances} from '@railgun-community/wallet';

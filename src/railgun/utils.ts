@@ -1,6 +1,7 @@
 import {formatUnits} from 'ethers';
 import {TransactionHistoryEntry, AbstractWallet} from '@railgun-community/engine';
 import { Chain } from '@railgun-community/shared-models';
+import { validateRailgunAddress } from '@railgun-community/wallet';
 
 export type TxInfo = {
     length: number;
@@ -39,3 +40,20 @@ export async function fetchTransactionHistory(wallet:AbstractWallet, chain: Chai
         console.error('Error encountered:', error);
     }
   }
+
+export const extractZKaddress = (memo: string): string | undefined {
+    const pattern = /0zk[a-fA-F0-9]+/;
+    const match = memo.match(pattern);
+    if (match === null) {
+        return undefined;
+    }
+    if (match[0].length < 127) {
+        return undefined;
+    }
+    const zkAddress = match[0].substring(0, 127);
+    const isValid = validateRailgunAddress(zkAddress);
+    if (!isValid) {
+        return undefined;
+    }
+    return zkAddress;
+}
