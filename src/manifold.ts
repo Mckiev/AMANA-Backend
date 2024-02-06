@@ -92,7 +92,7 @@ function parceTransfer(transactions: unknown[]): ManifoldTransfer[] {
 
 // Receives user id as an argument, with default value set to my user id.
  async function  fetchTransfers(userID: string = "6DLzPFOV0LelhuLPnCECIXqsIgN2" ): Promise<ManifoldTransfer[]> {
-    const url = `https://api.manifold.markets/v0/managrams?toId=${userID}`;
+    const url = `https://api.manifold.markets/v0/managrams?toId=${userID}&limit=5`;
     const headers = {
       'Authorization': `Key ${config.apiKey}`,
       'Content-Type': 'application/json'

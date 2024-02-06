@@ -6,6 +6,8 @@ export { TxInfo } from './utils';
 import { TxInfo } from './utils';
 export { createRailgunWallet as createWallet, walletForID, setOnBalanceUpdateCallback, refreshBalances} from '@railgun-community/wallet';
 import { createRailgunWallet as createWallet, walletForID, setOnBalanceUpdateCallback, refreshBalances} from '@railgun-community/wallet';
+  
+export {sendTransfer} from './self-transfer';
 export const {chain} = NETWORK_CONFIG[NetworkName.Polygon];
 import config from '../config'
 import { TXIDVersion } from '@railgun-community/engine'
