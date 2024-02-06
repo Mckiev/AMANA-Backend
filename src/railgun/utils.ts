@@ -41,7 +41,7 @@ export async function fetchTransactionHistory(wallet:AbstractWallet, chain: Chai
     }
   }
 
-export const extractZKaddress = (memo: string): string | undefined {
+export const extractZKaddress = (memo: string): string | undefined => {
     const pattern = /0zk[a-fA-F0-9]+/;
     const match = memo.match(pattern);
     if (match === null) {
@@ -56,4 +56,4 @@ export const extractZKaddress = (memo: string): string | undefined {
         return undefined;
     }
     return zkAddress;
-}
+};

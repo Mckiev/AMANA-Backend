@@ -1,17 +1,10 @@
 import config from './config';
-
-type ObjectRecord = Record<string, unknown>;
-
-const isObjectRecord = (value: unknown): value is ObjectRecord => (
-  typeof value === 'object'
-    && !Array.isArray(value)
-    && value !== null
-);
+import { isObjectRecord } from './types';
 
 export type ManifoldTransfer = {
   id: string;
   from: string;
-  amount: string;
+  amount: bigint;
   memo: string;
 };
 
@@ -35,11 +28,13 @@ const isManifoldTransaction = (value: unknown): value is ManifoldTransactionJSON
 
 type UserData = {
   id: string;
+  username: string;
 };
 
 const isUserData = (value: unknown): value is UserData => (
   isObjectRecord(value)
     && typeof value.id === 'string'
+    && typeof value.username === 'string'
 );
 
 type MarketData = {
@@ -48,7 +43,7 @@ type MarketData = {
 
 const isMarketData = (value: unknown): value is MarketData => (
   isObjectRecord(value)
-    && typeof value.id === 'string'
+  && typeof value.id === 'string'
 );
 
 type ResponseJson = {
@@ -84,7 +79,7 @@ function parceTransfer(transactions: unknown[]): ManifoldTransfer[] {
     return {
       id: transaction.id,
       from: transaction.fromId, 
-      amount: transaction.amount.toString(), 
+      amount: BigInt(transaction.amount),
       memo: transaction.data.message 
     }
   });
@@ -249,6 +244,25 @@ const onTransfer = (callback: ManifoldTransactionCallback): void => {
   }
 
 
+const getUsername = async (userId: string): Promise<string> => {
+  const userDataResponse = await fetch(`https://api.manifold.markets/v0/user/by-id/${userId}`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Key ${config.apiKey}`,
+      'Content-Type': 'application/json'
+    }
+  });
+
+  if (!userDataResponse.ok) {
+    throw new Error(`Error fetching username: ${userDataResponse.status}`);
+  }
+
+  const userData= await userDataResponse.json();
+  if (!isUserData(userData)) {
+    throw new Error('Unexpected user type returned from Manifold API');
+  }
+  return userData.id;
+};
 
 export default {
   fetchTransfers,
@@ -256,6 +270,7 @@ export default {
   tradeShares,
   getMarketID,
   getUserID,
+  getUsername,
   onTransfer,
   ShareType
 }
