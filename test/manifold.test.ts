@@ -1,8 +1,8 @@
 import Manifold from '../src/manifold'
 // This test whether the function fetchManifoldTransactions() returns a non empty transaction list from Manifold.
-describe('fetchTransactions function', () => {
+describe('fetchTransfers function', () => {
     it('should fetch transactions successfully with the correct structure', async () => {
-        const result = await Manifold.fetchTransactions();
+        const result = await Manifold.fetchTransfers();
         //receving some array of 2 or more transactions
         expect(Array.isArray(result)).toBe(true);
         expect(result.length).toBeGreaterThan(1);
@@ -50,7 +50,7 @@ describe('sendTransfer function', () => {
     
         const recipientUserId = await Manifold.getUserID(recipientUsername);
         // Fetch transactions for the recipient
-        const transactions = await Manifold.fetchTransactions(recipientUserId);
+        const transactions = await Manifold.fetchTransfers(recipientUserId);
     
         // Find the transaction in the list
         const found = transactions.some(t => t.memo === memo && t.amount === amount.toString());
