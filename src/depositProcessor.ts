@@ -6,7 +6,7 @@ import { sendTransfer } from "./railgun/self-transfer";
 const processDeposits = async (): Promise<void> => {
   const deposit = await database.getQueuedDeposit();
   if (deposit) {
-    const username = await manifold.getUsername(deposit.manifolUserId);
+    const username = await manifold.getUsername(deposit.manifoldUserId);
     const memo = `DEPOSIT FROM ${username}`;
     const transaction = await sendTransfer(deposit.railgunAddress, memo, deposit.amount);
     await database.updateDepositToSubmitted(deposit.id);

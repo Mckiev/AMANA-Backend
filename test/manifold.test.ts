@@ -14,7 +14,7 @@ describe('fetchTransfers function', () => {
 
         //the properties are of the correct type
         expect(typeof result[0].from).toBe('string');
-        expect(typeof result[0].amount).toBe('string');
+        expect(typeof result[0].amount).toBe('bigint');
         expect(typeof result[0].memo).toBe('string');
 
 
@@ -53,7 +53,7 @@ describe('sendTransfer function', () => {
         const transactions = await Manifold.fetchTransfers(recipientUserId);
     
         // Find the transaction in the list
-        const found = transactions.some(t => t.memo === memo && t.amount === amount.toString());
+        const found = transactions.some(t => t.memo === memo && t.amount.toString() === amount.toString());
     
         // Assert that the transaction is found
         expect(found).toBe(true);
