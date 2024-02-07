@@ -9,10 +9,6 @@ const handleManifoldTransfer: ManifoldTransactionCallback = async (transfer) => 
   const zkAddress = Railgun.extractZKaddress(transfer.memo);
   if (zkAddress) {
     const depositId = await database.createDeposit(zkAddress, transfer.id, transfer.from, transfer.amount);
-
-
-    console.log('sending amana to', zkAddress);
-    // Railgun.sendTransfer(zkAddress, `DEPOSIT FROM ${transfer.from}` , amount);
   }
 };
 
@@ -21,10 +17,10 @@ const main = async() => {
   await database.initialize();
   // const id = await database.createDeposit('0zktest', 'transferIdTest', 'userIdTest', 5000n);
   // console.log('inserted with id', id);
+  // depositProcessor.initialize();
+  manifold.onTransfer(handleManifoldTransfer);
   const deposit = await database.getQueuedDeposit();
   console.log('queued deposit', deposit);
-  // depositProcessor.initialize();
-  // manifold.onTransfer(handleManifoldTransfer);
 };
 
 main().catch(console.error);

@@ -81,43 +81,27 @@ enum BetState {
 type StringObject = { [key: string]: string };
 
 
-// const isGenericStringRow = (value: unknown): value is GenericStringRow => (
-//   isObjectRecord(value)
-//     && Object.values(value).every(v => typeof v === 'string')
-// );
-
-// const isGenericStringRows = (values: unknown): values is GenericStringRow[] => ( 
-//   Array.isArray(values)
-//     && values.every(value => isGenericStringRow(value))
-// );
-
 const isArrayOfStringObjects = (array: unknown): array is StringObject[] => {
-  // Check if input is an array
+
   if (!Array.isArray(array)) {
     return false;
   }
 
-  // Iterate over each item in the array
   for (const item of array) {
-    // Check if the item is an object
     if (typeof item !== 'object' || item === null) {
       return false;
     }
 
-    // Check each key/value pair in the object
     for (const [key, value] of Object.entries(item)) {
-      // Ensure the key is a string
       if (typeof key !== 'string') {
         return false;
       }
-      // Ensure the value is a string
       if (typeof value !== 'string') {
         return false;
       }
     }
   }
 
-  // If all checks passed, return true
   return true;
 }
 
