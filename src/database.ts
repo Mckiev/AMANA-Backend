@@ -29,7 +29,7 @@ const initialize = async () => {
       id VARCHAR(64) PRIMARY KEY,
       timestamp BIGINT,
       railgunAddress VARCHAR(127),
-      manifoldTransferId TEXT,
+      manifoldTransferId TEXT UNIQUE,
       manifoldUserId TEXT,
       amount BIGINT,
       state TEXT
@@ -80,31 +80,24 @@ enum BetState {
 
 type StringObject = { [key: string]: string };
 
+const isStringObject = (item: unknown): item is StringObject => (
+  typeof item === 'object'
+    && item !== null
+    && Object.entries(item).every(([key, value]) => (
+      typeof key === 'string'
+        && typeof value === 'string'
+    ))
+);
 
-const isArrayOfStringObjects = (array: unknown): array is StringObject[] => {
+const isArrayOfStringObjects = (values: unknown): values is StringObject[] => (
+  Array.isArray(values)
+    && values.every(isStringObject)
+);
 
-  if (!Array.isArray(array)) {
-    return false;
-  }
-
-  for (const item of array) {
-    if (typeof item !== 'object' || item === null) {
-      return false;
-    }
-
-    for (const [key, value] of Object.entries(item)) {
-      if (typeof key !== 'string') {
-        return false;
-      }
-      if (typeof value !== 'string') {
-        return false;
-      }
-    }
-  }
-
-  return true;
-}
-
+const isDepositState = (value: unknown): value is DepositState => (
+  typeof value === 'string'
+    && value in DepositState
+);
 
 type Deposit = {
   id: string;
@@ -162,19 +155,18 @@ const isWithdrawals = (values: unknown): values is Withdrawal[] => (
     && values.every(value => isWithdrawal(value))
 );
 
-const createDeposit = async (
+const createDepositIfNotExists = async (
   railgunAddress: string,
   manifoldTransferId: string,
   manifoldUserId: string,
   amount: bigint,
-): Promise<string> => {
+): Promise<void> => {
   const id = generateId();
   const timestamp = Date.now();
   const state = DepositState.Requested;
-  const query = 'INSERT INTO Deposits (id, timestamp, railgunAddress, manifoldTransferId, manifoldUserId, amount, state) VALUES ($1, $2, $3, $4, $5, $6, $7)';
+  const query = 'INSERT INTO Deposits (id, timestamp, railgunAddress, manifoldTransferId, manifoldUserId, amount, state) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT DO NOTHING';
   const parameters = [id, timestamp, railgunAddress, manifoldTransferId, manifoldUserId, amount, state];
   await connection.query(query, parameters);
-  return id;
 };
 
 const updateDepositToSubmitted = async (id: string): Promise<void> => {
@@ -191,34 +183,34 @@ const updateDepositToConfirmed = async (id: string): Promise<void> => {
   await connection.query(query, parameters);
 };
 
-function convertToArrayOfDeposits(arrayOfStringObjects: StringObject[]): Deposit[] {
-  return arrayOfStringObjects.map((obj): Deposit => {
-    const state = obj.state as DepositState;
-    if (!Object.values(DepositState).includes(state)) {
-      throw new Error(`Invalid state value: ${obj.state}`);
-    }
-    const timestamp = BigInt(obj.timestamp);
-    const amount = BigInt(obj.amount);
+const convertToDeposit = (value: StringObject): Deposit => {
+  const state = value.state;
+  if (!isDepositState(state)) {
+    throw new Error(`Invalid state value: ${value.state}`);
+  }
+  const timestamp = BigInt(value.timestamp);
+  const amount = BigInt(value.amount);
 
-    return {
-      id: obj.id,
-      timestamp,
-      railgunAddress: obj.railgunaddress,
-      manifoldTransferId: obj.manifoldtransferid,
-      manifoldUserId: obj.manifolduserid,
-      amount,
-      state,
-    };
-  });
-}
-
+  return {
+    id: value.id,
+    timestamp,
+    railgunAddress: value.railgunaddress,
+    manifoldTransferId: value.manifoldtransferid,
+    manifoldUserId: value.manifolduserid,
+    amount,
+    state,
+  };
+};
 
 const getQueuedDeposit = async (): Promise<Deposit | undefined> => {
   const query = 'SELECT * FROM Deposits WHERE state=$1 OR state=$2 ORDER BY timestamp ASC';
   const parameters = [DepositState.Requested, DepositState.Submitted];
   const results = await connection.query(query, parameters);
   const {rows} = results;
-  const deposits = convertToArrayOfDeposits(rows);
+  if (!isArrayOfStringObjects(rows)) {
+    throw new Error('Expected the rows to be an array of string objects');
+  }
+  const deposits = rows.map(convertToDeposit);
   // [
   //   {
   //     id: '7b4e4cca5f5d33ab9b0d242cfd7bfebf05b6bf5b35197739ca734dea1e01122a',
@@ -264,7 +256,7 @@ const updateWithdrawalToConfirmed = async (id: string): Promise<void> => {
 
 export default {
   initialize,
-  createDeposit,
+  createDepositIfNotExists,
   updateDepositToSubmitted,
   updateDepositToConfirmed,
   getQueuedDeposit,
