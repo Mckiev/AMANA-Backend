@@ -41,7 +41,7 @@ export async function sendTransfer(railgunAddress : string, memoText : string, a
     maxPriorityFeePerGas
   };
 
-  const railgunWallet = await Railgun.start();
+  const railgunWallet = Railgun.getWallet();
   const railgunWalletID = railgunWallet.id;
   // Need to refresh balances, or wallet may try to spend already spent UTXOs.
   await Railgun.refreshBalances(Railgun.chain, undefined);

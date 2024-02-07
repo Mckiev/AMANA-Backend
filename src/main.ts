@@ -13,14 +13,10 @@ const handleManifoldTransfer: ManifoldTransactionCallback = async (transfer) => 
 };
 
 const main = async() => {
-  // await Railgun.start();
+  await Railgun.initialize();
   await database.initialize();
-  // await database.createDepositIfNotExists('0zktest', 'transferIdTest', 'userIdTest', 5000n);
-  // console.log('inserted with id', id);
   depositProcessor.initialize();
   manifold.onTransfer(handleManifoldTransfer);
-  const deposit = await database.getQueuedDeposit();
-  console.log('queued deposit', deposit);
 };
 
 main().catch(console.error);
