@@ -4,7 +4,7 @@ import {POIList, AbstractWallet} from '@railgun-community/engine';
 import { groth16 } from 'snarkjs';
 import Level from 'leveldown';
 import { createArtifactStore } from './create-artifact-store';
-import {fetchTransactionHistory, TxInfo} from './utils';
+import {fetchTransactionHistory, TxHistoryInfo} from './utils';
 
 export type Optional<T> = T | null | undefined;
 
@@ -23,7 +23,7 @@ export  const initializeEngine = (): void => {
     // Name for your wallet implementation.
     // Encrypted and viewable in private transaction history.
     // Maximum of 16 characters, lowercase.
-    const walletSource = 'quickstart demo';
+    const walletSource = 'AMANA RAILGUN';
     
     // LevelDOWN compatible database for storing encrypted wallets.
     const dbPath = 'engine.db';
@@ -82,9 +82,10 @@ export const onMerkletreeScanCallback = (eventData: MerkletreeScanUpdateEvent) =
     console.log(eventData);
     };
 
-export const onBalanceUpdateCallback = (balancesFormatted: RailgunBalancesEvent, wallet:AbstractWallet, chain: Chain, tx_info:TxInfo) => {
-    console.log('onBalanceUpdateCallback');
-    fetchTransactionHistory(wallet, chain, tx_info);
+export const onBalanceUpdateCallback = (balancesFormatted: RailgunBalancesEvent, wallet:AbstractWallet, chain: Chain, tx_info:TxHistoryInfo) => {
+    // console.log('onBalanceUpdateCallback');
+    // console.log('balancesFormatted',balancesFormatted);
+    // fetchTransactionHistory(wallet, chain, tx_info);
     };
   
   

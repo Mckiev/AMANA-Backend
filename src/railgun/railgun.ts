@@ -2,8 +2,8 @@ import { NETWORK_CONFIG, NetworkName } from '@railgun-community/shared-models';
 
 import { setEngineLoggers, initializeEngine, creationBlockNumberMap, onBalanceUpdateCallback, loadEngineProvider} from './engine';
 export { setEngineLoggers, initializeEngine, creationBlockNumberMap, onBalanceUpdateCallback, onMerkletreeScanCallback, loadEngineProvider} from './engine';
-export { TxInfo, extractZKaddress } from './utils';
-import { TxInfo } from './utils';
+export { TxHistoryInfo, extractZKaddress, onTransaction} from './utils';
+import { TxHistoryInfo } from './utils';
 export { createRailgunWallet as createWallet, walletForID, setOnBalanceUpdateCallback, refreshBalances} from '@railgun-community/wallet';
 import { createRailgunWallet as createWallet, walletForID, setOnBalanceUpdateCallback, refreshBalances} from '@railgun-community/wallet';
   
@@ -32,7 +32,7 @@ export const initialize = async () => {
 
     await wallet.getTokenBalances(TXIDVersion.V2_PoseidonMerkle, chain, false); // onlySpendable
   
-    const tx_info: TxInfo = { length: 0 };
+    const tx_info: TxHistoryInfo = { length: 0 };
     setOnBalanceUpdateCallback((balancesFormatted) => onBalanceUpdateCallback(balancesFormatted, getWallet(), chain, tx_info));
     
     await refreshBalances(chain, undefined);

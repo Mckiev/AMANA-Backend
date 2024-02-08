@@ -1,5 +1,12 @@
 import config from './config';
-import { isObjectRecord } from './types';
+
+type ObjectRecord = Record<string, unknown>;
+
+const isObjectRecord = (value: unknown): value is ObjectRecord => (
+  typeof value === 'object'
+    && !Array.isArray(value)
+    && value !== null
+);
 
 export type ManifoldTransfer = {
   id: string;
@@ -43,7 +50,7 @@ type MarketData = {
 
 const isMarketData = (value: unknown): value is MarketData => (
   isObjectRecord(value)
-  && typeof value.id === 'string'
+    && typeof value.id === 'string'
 );
 
 type ResponseJson = {
@@ -79,15 +86,15 @@ function parceTransfer(transactions: unknown[]): ManifoldTransfer[] {
     return {
       id: transaction.id,
       from: transaction.fromId, 
-      amount: BigInt(transaction.amount),
+      amount: BigInt(transaction.amount), 
       memo: transaction.data.message 
     }
   });
 }
 
 // Receives user id as an argument, with default value set to my user id.
- async function  fetchTransfers(userID: string = "6DLzPFOV0LelhuLPnCECIXqsIgN2" ): Promise<ManifoldTransfer[]> {
-    const url = `https://api.manifold.markets/v0/managrams?toId=${userID}&limit=5`;
+ async function  fetchTransfers(userID: string = config.apiKey ): Promise<ManifoldTransfer[]> {
+    const url = `https://api.manifold.markets/v0/managrams?toId=${userID}`;
     const headers = {
       'Authorization': `Key ${config.apiKey}`,
       'Content-Type': 'application/json'
@@ -242,27 +249,27 @@ const onTransfer = (callback: ManifoldTransactionCallback): void => {
     }
     return marketData.id;
   }
+  
 
-
-const getUsername = async (userId: string): Promise<string> => {
-  const userDataResponse = await fetch(`https://api.manifold.markets/v0/user/by-id/${userId}`, {
-    method: 'GET',
-    headers: {
-      'Authorization': `Key ${config.apiKey}`,
-      'Content-Type': 'application/json'
+  const getUsername = async (userId: string): Promise<string> => {
+    const userDataResponse = await fetch(`https://api.manifold.markets/v0/user/by-id/${userId}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Key ${config.apiKey}`,
+        'Content-Type': 'application/json'
+      }
+    });
+  
+    if (!userDataResponse.ok) {
+      throw new Error(`Error fetching username: ${userDataResponse.status}`);
     }
-  });
-
-  if (!userDataResponse.ok) {
-    throw new Error(`Error fetching username: ${userDataResponse.status}`);
-  }
-
-  const userData= await userDataResponse.json();
-  if (!isUserData(userData)) {
-    throw new Error('Unexpected user type returned from Manifold API');
-  }
-  return userData.id;
-};
+  
+    const userData= await userDataResponse.json();
+    if (!isUserData(userData)) {
+      throw new Error('Unexpected user type returned from Manifold API');
+    }
+    return userData.username;
+  };
 
 export default {
   fetchTransfers,
