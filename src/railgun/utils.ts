@@ -1,7 +1,7 @@
 import {formatUnits} from 'ethers';
 import {TransactionHistoryEntry, AbstractWallet} from '@railgun-community/engine';
 import { Chain } from '@railgun-community/shared-models';
-import { validateRailgunAddress, refreshBalances } from '@railgun-community/wallet';
+import { validateRailgunAddress, setOnBalanceUpdateCallback } from '@railgun-community/wallet';
 import constants from '../constants';
 import {chain, getWallet} from './railgun';
 
@@ -127,7 +127,7 @@ export async function fetchTransactionHistory(wallet:AbstractWallet, chain: Chai
     }
   }
 
-const convertTranscation = (tx: TransactionHistoryEntry): RailgunTransaction => {
+const convertTransaction = (tx: TransactionHistoryEntry): RailgunTransaction => {
     const tokenAddress = tx.receiveTokenAmounts[0]?.tokenData.tokenAddress ?? '';
     const amount = tx.receiveTokenAmounts[0]?.amount ?? 0n;
     const memo = tx.receiveTokenAmounts[0]?.memoText ?? '';
@@ -143,15 +143,14 @@ const convertTranscation = (tx: TransactionHistoryEntry): RailgunTransaction => 
     };
 }
 
-export async function fetchNewTransactions(quantity: number = 5): Promise<RailgunTransaction[]>{
+export async function fetchNewTransactions(): Promise<RailgunTransaction[]>{
     console.log('Fetching new transactions');
     const wallet = getWallet();
     // await refreshBalances(chain, undefined);
     try {
         const currentTransactionHistory = await wallet.getTransactionHistory(chain, undefined);
-        const latestTransactions = Array.from(currentTransactionHistory).slice(-quantity);
-        console.log('Latest transactions:', latestTransactions);
-        return latestTransactions.map(convertTranscation);
+        console.log('Latest transactions:', currentTransactionHistory);
+        return currentTransactionHistory.map(convertTransaction);
     } catch (error) {
         console.error('Error encountered:', error);
         throw error;
@@ -183,29 +182,25 @@ export type RailgunTransaction = {
     recipientAddress: string;
     timestamp: bigint;
 }
+
 export const onTransaction = (callback: RailgunTransactionCallback): void => {
-
-    const handledTxIds: string[] = [];
-
-    const checkForTransactions = async () => {
-      console.log('Checking for Railgun transactions...');
-      const allTransactions = await fetchNewTransactions();
-      allTransactions.forEach(transaction => {
-        const alreadyHandled = handledTxIds.includes(transaction.txid);
-        if (!alreadyHandled) {
-            handledTxIds.push(transaction.txid);
-          callback(transaction);
-        }
-      });
-      setTimeout(checkForTransactions, 30000);
-    };
-  
-    checkForTransactions();
+    const handledTxIds: Record<string, true | undefined> = {};
+    setOnBalanceUpdateCallback(async () => {
+        console.log('Checking for Railgun transactions...');
+        const allTransactions = await fetchNewTransactions();
+        allTransactions.forEach(transaction => {
+            const alreadyHandled = handledTxIds[transaction.txid] === true;
+            if (!alreadyHandled) {
+            handledTxIds[transaction.txid] = true;
+            callback(transaction);
+            }
+        });
+    });
   };
 
 export function isTransactionWithdrawal(tx: RailgunTransaction): boolean {
     return tx.memo.toLowerCase().includes('withdraw')
-        && tx.recipientAddress.toLowerCase() === constants.RAILGUN.WALLET_ADDRESS.toLowerCase()
+        && tx.recipientAddress.toLowerCase() === getWallet().getAddress().toLowerCase()
         && tx.tokenAddress.toLocaleLowerCase() === constants.TOKENS.AMANA.toLowerCase()
         && tx.amount > 0n;
 }

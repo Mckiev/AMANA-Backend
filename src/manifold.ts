@@ -1,12 +1,5 @@
 import config from './config';
-
-type ObjectRecord = Record<string, unknown>;
-
-const isObjectRecord = (value: unknown): value is ObjectRecord => (
-  typeof value === 'object'
-    && !Array.isArray(value)
-    && value !== null
-);
+import { isObjectRecord } from './types';
 
 export type ManifoldTransfer = {
   id: string;
@@ -57,17 +50,29 @@ type ResponseJson = {
   success: boolean;
 };
 
-type BetResponseJson = {
+type BetResponseJson = ResponseJson & {
   isFilled: boolean;
+};
+
+type ManagramResponseJson = ResponseJson & {
+  id: string;
 };
 
 const isResponseJson = (value: unknown): value is ResponseJson => (
   isObjectRecord(value)
     && typeof value.success === 'boolean'
 );
-const isBetResponseJson = (value: unknown): value is ResponseJson => (
+
+const isBetResponseJson = (value: unknown): value is BetResponseJson => (
   isObjectRecord(value)
+    && typeof value.success === 'boolean'
     && typeof value.isFilled === 'boolean'
+);
+
+const isManagramResponseJson = (value: unknown): value is ManagramResponseJson => (
+  isObjectRecord(value)
+    && typeof value.success === 'boolean'
+    && typeof value.id === 'string'
 );
 
 // defines enum for 'yes' and 'no' values
@@ -78,6 +83,20 @@ enum ShareType {
 
 export type ManifoldTransactionCallback = (transfer: ManifoldTransfer) => void;
 
+const fetchMyId = async (): Promise<string> => {
+  const url = `https://api.manifold.markets/v0/me`;
+  const headers = {
+    'Authorization': `Key ${config.apiKey}`,
+    'Content-Type': 'application/json'
+  };
+  const response = await fetch(url, { headers });
+  const json = await response.json();
+  if (!isUserData(json)) {
+    throw new Error('Unexpected Manifold API response for "me" user');
+  }
+  return json.id;
+}
+
 function parceTransfer(transactions: unknown[]): ManifoldTransfer[] {
   return transactions.map(transaction => {
     if (!isManifoldTransaction(transaction)) {
@@ -86,14 +105,14 @@ function parceTransfer(transactions: unknown[]): ManifoldTransfer[] {
     return {
       id: transaction.id,
       from: transaction.fromId, 
-      amount: BigInt(transaction.amount), 
+      amount: BigInt(transaction.amount),
       memo: transaction.data.message 
     }
   });
 }
 
 // Receives user id as an argument, with default value set to my user id.
- async function  fetchTransfers(userID: string = config.apiKey ): Promise<ManifoldTransfer[]> {
+ async function  fetchTransfers(userID: string): Promise<ManifoldTransfer[]> {
     const url = `https://api.manifold.markets/v0/managrams?toId=${userID}`;
     const headers = {
       'Authorization': `Key ${config.apiKey}`,
@@ -121,7 +140,8 @@ const onTransfer = (callback: ManifoldTransactionCallback): void => {
 
   const checkForTransfers = async () => {
     console.log('Checking for transfers...');
-    const allTransfers = await fetchTransfers();
+    const userId = await fetchMyId();
+    const allTransfers = await fetchTransfers(userId);
     allTransfers.forEach(transfer => {
       const alreadyHandled = handledTransferIds.includes(transfer.id);
       if (!alreadyHandled) {
@@ -158,14 +178,18 @@ const onTransfer = (callback: ManifoldTransactionCallback): void => {
   }
 
 // Sends transfer to username
- async function sendTransfer(recipientUsername: string, amount: number, memo: string, from_api_key: string = config.mckievAPIKey): Promise<undefined> {
+ async function sendTransfer(
+  recipientUsername: string,
+  amount: number,
+  memo: string,
+): Promise<string> {
     
     const recipientUserId = await getUserID(recipientUsername);
     
     const managramResponse = await fetch('https://api.manifold.markets/v0/managram', {
       method: 'POST',
       headers: {
-        'Authorization': `Key ${from_api_key}`,
+        'Authorization': `Key ${config.apiKey}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
@@ -184,13 +208,15 @@ const onTransfer = (callback: ManifoldTransactionCallback): void => {
 
     const json: ResponseJson = await managramResponse.json();
 
-    if (!isResponseJson(json)) {
+    if (!isManagramResponseJson(json)) {
       throw new Error('Unexpected response type returned from Manifold API');
     }
 
     if (!json.success) {
       throw new Error('Failed to send Manifold transfer');
     }
+
+    return json.id;
   }
 
   
@@ -272,6 +298,7 @@ const onTransfer = (callback: ManifoldTransactionCallback): void => {
   };
 
 export default {
+  fetchMyId,
   fetchTransfers,
   sendTransfer,
   tradeShares,

@@ -12,8 +12,8 @@ const processWithdrawals = async (): Promise<void> => {
       } else {
         const amount = Number(withdrawal.amount);
         const memo = 'AMANA Withdrawal';
-        manifold.sendTransfer(withdrawal.manifoldUsername, amount, memo, config.apiKey);
-        database.updateWithdrawalToConfirmed(withdrawal.id);
+        const manifoldTransferId = await manifold.sendTransfer(withdrawal.manifoldUsername, amount, memo);
+        database.updateWithdrawalToConfirmed(withdrawal.id, manifoldTransferId);
       }
     }
     setTimeout(processWithdrawals, 1000);

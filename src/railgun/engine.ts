@@ -4,7 +4,7 @@ import {POIList, AbstractWallet} from '@railgun-community/engine';
 import { groth16 } from 'snarkjs';
 import Level from 'leveldown';
 import { createArtifactStore } from './create-artifact-store';
-import {fetchTransactionHistory, TxHistoryInfo} from './utils';
+import { TxHistoryInfo} from './utils';
 
 export type Optional<T> = T | null | undefined;
 
@@ -80,14 +80,7 @@ export  const initializeEngine = (): void => {
 export const onMerkletreeScanCallback = (eventData: MerkletreeScanUpdateEvent) => {
     console.log('onMerkletreeScanCallback');
     console.log(eventData);
-    };
-
-export const onBalanceUpdateCallback = (balancesFormatted: RailgunBalancesEvent, wallet:AbstractWallet, chain: Chain, tx_info:TxHistoryInfo) => {
-    // console.log('onBalanceUpdateCallback');
-    // console.log('balancesFormatted',balancesFormatted);
-    // fetchTransactionHistory(wallet, chain, tx_info);
-    };
-  
+    };  
   
 // Block numbers for each chain when wallet was first created.
 // If unknown, provide undefined.
@@ -115,11 +108,11 @@ export const loadEngineProvider = async () => {
       ]
     }
   
-    const shouldDebug = 1;
-  
+    const pollingInterval = 5000; // 5 seconds
+
     await loadProvider(
       POLYGON_PROVIDERS_JSON,
       NetworkName.Polygon,
-      shouldDebug,
+      pollingInterval,
     );
   }

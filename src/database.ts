@@ -2,6 +2,7 @@
 // import path from 'path';
 import { randomBytes } from 'crypto';
 import { Pool } from 'pg';
+import { isObjectRecord } from './types';
 
 
 const generateId = (): string => (
@@ -137,7 +138,7 @@ type Withdrawal = {
   railgunTransactionId: string;
   manifoldUserId: string;
   manifoldUsername: string;
-  manifoldTransferId: string;
+  manifoldTransferId?: string;
   amount: bigint;
   state: WithdrawalState;
 };
@@ -223,7 +224,33 @@ const getQueuedDeposit = async (): Promise<Deposit | undefined> => {
   return deposits.find(deposit => deposit.state === DepositState.Requested);
 };
 
-const convertToWithdrawal = (value: StringObject): Withdrawal => {
+type WithdrawalRow = {
+  id: 'string',
+  timestamp: 'string',
+  railguntransactionid: 'string',
+  manifolduserid: 'string',
+  manifoldusername: 'string',
+  manifoldtransferid: 'string' | null,
+  amount: 'string',
+  state: 'string'
+};
+
+const isWithdrawalRow = (value: unknown) : value is WithdrawalRow => (
+  isObjectRecord(value)
+    && typeof value.id === 'string'
+    && typeof value.timestamp === 'string'
+    && typeof value.railguntransactionid === 'string'
+    && typeof value.manifolduserid === 'string'
+    && typeof value.manifoldusername === 'string'
+    && (
+      value.manifoldtransferid === null
+      || typeof value.manifoldtransferid === 'string'
+    )
+    && typeof value.amount === 'string'
+    && typeof value.state === 'string'
+);
+
+const convertToWithdrawal = (value: WithdrawalRow): Withdrawal => {
   const state = value.state;
   if (!isWithdrawalState(state)) {
     throw new Error(`Invalid state value: ${value.state}`);
@@ -237,11 +264,15 @@ const convertToWithdrawal = (value: StringObject): Withdrawal => {
     railgunTransactionId: value.railguntransactionid,
     manifoldUserId: value.manifolduserid,
     manifoldUsername: value.manifoldusername,
-    manifoldTransferId: value.manifoldtransferid,
+    manifoldTransferId: (
+      value.manifoldtransferid === null
+      ? undefined
+      : value.manifoldtransferid
+    ),
     amount,
     state,
   };
-}
+};
 
 const createWithdrawal = async (
   railgunTransactionId: string,
@@ -249,36 +280,32 @@ const createWithdrawal = async (
   manifoldUserId: string,
   manifoldUsername: string,
   amount: bigint,
-): Promise<string> => {
+): Promise<void> => {
   const id = generateId();
-  const manifoldTransferId = 'pending';
   const state = WithdrawalState.Requested;
   const query = 'INSERT INTO Withdrawals (id, timestamp, railgunTransactionid, manifoldUserId, manifoldUsername, manifoldTransferId, amount, state) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT DO NOTHING';
-  const parameters = [id, timestamp, railgunTransactionId, manifoldUserId, manifoldUsername, manifoldTransferId, amount, state];
+  const parameters = [id, timestamp, railgunTransactionId, manifoldUserId, manifoldUsername, null, amount, state];
   await connection.query(query, parameters);
-  return id;
 };
 
 const getQueuedWithdrawal = async (): Promise<Withdrawal | undefined> => {
-  const query = 'SELECT * FROM Withdrawals WHERE state=$1 ORDER BY timestamp ASC';
+  const query = 'SELECT * FROM Withdrawals WHERE state=$1 ORDER BY timestamp ASC LIMIT 1';
   const parameters = [WithdrawalState.Requested];
   const results = await connection.query(query, parameters);
-  const {rows} = results;
-  if (rows.length === 0) {
+  const row: unknown = results.rows[0];
+  if (row === undefined) {
     return undefined;
   }
-  if (!isArrayOfStringObjects(rows)) {
-    console.log('rows:', rows);
-    throw new Error('Expected the rows to be an array of string objects');
+  if (!isWithdrawalRow(row)) {
+    throw new Error('Expected the row to be a WithdrawalRow');
   }
-  const withdrawals = rows.map(convertToWithdrawal);
-  return withdrawals[0];
+  return convertToWithdrawal(row);
 }
 
-const updateWithdrawalToConfirmed = async (id: string): Promise<void> => {
+const updateWithdrawalToConfirmed = async (id: string, manifoldTransferId: string): Promise<void> => {
   const state = WithdrawalState.Confirmed;
-  const query = 'UPDATE Withdrawals SET state=$1 WHERE id=$2';
-  const parameters = [state, id];
+  const query = 'UPDATE Withdrawals SET state=$1, manifoldTransferId=$2 WHERE id=$3';
+  const parameters = [state, manifoldTransferId, id];
   await connection.query(query, parameters);
 };
 
