@@ -116,11 +116,3 @@ export async function sendTransfer(railgunAddress : string, memoText : string, a
   console.log('Sending transaction', tx.hash);
   return tx;
 }
-
-const railgunAddress = '0zk1qyql93qvzye2893gta6y5ha7vq5g25ctnkvnf9mlwjk34pett5utfrv7j6fe3z53lu72huwn80vy3pqt9zrpcuxncuc2tr9p3mv2jtqxkp4hawccfp832zhs6cz';
-
-  // Optional encrypted memo text only readable by the sender and receiver.
-  // May include text and emojis. See "Private Transfers" page for details.
-const memoText = 'Private transfer from Alice to Charlie';
-
-// sendTransfer(railgunAddress, memoText, 1n).catch(console.error);

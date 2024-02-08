@@ -66,17 +66,17 @@ enum DepositState {
   Confirmed = 'Confirmed',
 }
 
-enum WithdrawalState {
-  Requested = 'Requested',
-  Confirmed = 'Confirmed',
-}
+// enum WithdrawalState {
+//   Requested = 'Requested',
+//   Confirmed = 'Confirmed',
+// }
 
-enum BetState {
-  Placing = 'Placing',
-  Placed = 'Placed',
-  Redeeming = 'Redeeming',
-  Redeemed = 'Redeemed',
-}
+// enum BetState {
+//   Placing = 'Placing',
+//   Placed = 'Placed',
+//   Redeeming = 'Redeeming',
+//   Redeemed = 'Redeemed',
+// }
 
 type StringObject = { [key: string]: string };
 
@@ -126,34 +126,34 @@ const isDeposits = (values: unknown): values is Deposit[] => (
     && values.every(value => isDeposit(value))
 );
 
-type Withdrawal = {
-  id: string;
-  timestamp: bigint;
-  railgunTransactionId: string;
-  manifoldUserId: string;
-  manifoldUsername: string;
-  manifoldTransferId: string;
-  amount: bigint;
-  state: WithdrawalState;
-};
+// type Withdrawal = {
+//   id: string;
+//   timestamp: bigint;
+//   railgunTransactionId: string;
+//   manifoldUserId: string;
+//   manifoldUsername: string;
+//   manifoldTransferId: string;
+//   amount: bigint;
+//   state: WithdrawalState;
+// };
 
-const isWithdrawal = (value: unknown): value is Withdrawal => (
-  isObjectRecord(value)
-    && typeof value.id === 'string'
-    && typeof value.timestamp === 'bigint'
-    && typeof value.railgunTransactionId === 'string'
-    && typeof value.manifoldUserId === 'string'
-    && typeof value.manifoldUsername === 'string'
-    && typeof value.manifoldTransferId === 'string'
-    && typeof value.amount === 'bigint'
-    && typeof value.state === 'string'
-    && value.state in WithdrawalState
-);
+// const isWithdrawal = (value: unknown): value is Withdrawal => (
+//   isObjectRecord(value)
+//     && typeof value.id === 'string'
+//     && typeof value.timestamp === 'bigint'
+//     && typeof value.railgunTransactionId === 'string'
+//     && typeof value.manifoldUserId === 'string'
+//     && typeof value.manifoldUsername === 'string'
+//     && typeof value.manifoldTransferId === 'string'
+//     && typeof value.amount === 'bigint'
+//     && typeof value.state === 'string'
+//     && value.state in WithdrawalState
+// );
 
-const isWithdrawals = (values: unknown): values is Withdrawal[] => (
-  Array.isArray(values)
-    && values.every(value => isWithdrawal(value))
-);
+// const isWithdrawals = (values: unknown): values is Withdrawal[] => (
+//   Array.isArray(values)
+//     && values.every(value => isWithdrawal(value))
+// );
 
 const createDepositIfNotExists = async (
   railgunAddress: string,
@@ -232,27 +232,27 @@ const getQueuedDeposit = async (): Promise<Deposit | undefined> => {
   return deposits.find(deposit => deposit.state === DepositState.Requested);
 };
 
-const createWithdrawal = async (
-  railgunTransactionId: string,
-  manifoldUserId: string,
-  manifoldUsername: string,
-  manifoldTransferId: string,
-  amount: bigint,
-): Promise<string> => {
-  const id = generateId();
-  const state = WithdrawalState.Requested;
-  const query = 'INSERT INTO Withdrawals (id, railgunTransactionid, manifoldUserId, manifoldUsername, manifoldTransferId, amount, state) VALUES ($1, $2, $3, $4, $5, $6, $7)';
-  const parameters = [id, railgunTransactionId, manifoldUserId, manifoldUsername, manifoldTransferId, amount, state];
-  // TODO: submit query to database
-  return id;
-};
+// const createWithdrawal = async (
+//   railgunTransactionId: string,
+//   manifoldUserId: string,
+//   manifoldUsername: string,
+//   manifoldTransferId: string,
+//   amount: bigint,
+// ): Promise<string> => {
+//   const id = generateId();
+//   const state = WithdrawalState.Requested;
+//   const query = 'INSERT INTO Withdrawals (id, railgunTransactionid, manifoldUserId, manifoldUsername, manifoldTransferId, amount, state) VALUES ($1, $2, $3, $4, $5, $6, $7)';
+//   const parameters = [id, railgunTransactionId, manifoldUserId, manifoldUsername, manifoldTransferId, amount, state];
+//   // TODO: submit query to database
+//   return id;
+// };
 
-const updateWithdrawalToConfirmed = async (id: string): Promise<void> => {
-  const state = WithdrawalState.Confirmed;
-  const query = 'UPDATE Withdrawals SET state=$1 WHERE id=$2';
-  const parameters = [state, id];
-  // TODO: submit query to database
-};
+// const updateWithdrawalToConfirmed = async (id: string): Promise<void> => {
+//   const state = WithdrawalState.Confirmed;
+//   const query = 'UPDATE Withdrawals SET state=$1 WHERE id=$2';
+//   const parameters = [state, id];
+//   // TODO: submit query to database
+// };
 
 export default {
   initialize,
@@ -260,6 +260,6 @@ export default {
   updateDepositToSubmitted,
   updateDepositToConfirmed,
   getQueuedDeposit,
-  createWithdrawal,
-  updateWithdrawalToConfirmed,
+  // createWithdrawal,
+  // updateWithdrawalToConfirmed,
 };

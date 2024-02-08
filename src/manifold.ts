@@ -110,7 +110,7 @@ function parceTransfer(transactions: unknown[]): ManifoldTransfer[] {
 const onTransfer = (callback: ManifoldTransactionCallback): void => {
 
   // TODO: store and retrieve these with a database
-  let handledTransferIds: string[] = [];
+  const handledTransferIds: string[] = [];
 
   const checkForTransfers = async () => {
     console.log('Checking for transfers...');
