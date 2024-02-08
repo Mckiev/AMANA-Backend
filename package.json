@@ -18,6 +18,7 @@
     "@types/jest": "^29.5.11",
     "@types/leveldown": "^4.0.6",
     "@types/node": "^20.11.5",
+    "@types/pg": "8.11.0",
     "@types/snarkjs": "0.7.8",
     "@typescript-eslint/eslint-plugin": "6.19.1",
     "@typescript-eslint/parser": "6.19.1",
@@ -40,6 +41,7 @@
     "fake-indexeddb": "^5.0.2",
     "level": "^8.0.0",
     "leveldown": "6.1.1",
+    "pg": "8.11.3",
     "snarkjs": "0.7.3"
   }
 }

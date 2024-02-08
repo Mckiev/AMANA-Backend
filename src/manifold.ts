@@ -1,20 +1,15 @@
 import config from './config';
+import { isObjectRecord } from './types';
 
-type ObjectRecord = Record<string, unknown>;
-
-const isObjectRecord = (value: unknown): value is ObjectRecord => (
-  typeof value === 'object'
-    && !Array.isArray(value)
-    && value !== null
-);
-
-type ManifoldTransfer = {
+export type ManifoldTransfer = {
+  id: string;
   from: string;
-  amount: string;
+  amount: bigint;
   memo: string;
 };
 
 type ManifoldTransactionJSON = {
+  id: string;
   fromId: string;
   amount: number;
   data: {
@@ -24,6 +19,7 @@ type ManifoldTransactionJSON = {
 
 const isManifoldTransaction = (value: unknown): value is ManifoldTransactionJSON => (
   isObjectRecord(value)
+    && typeof value.id === 'string'
     && typeof value.fromId === 'string'
     && typeof value.amount === 'number'
     && isObjectRecord(value.data)
@@ -32,11 +28,13 @@ const isManifoldTransaction = (value: unknown): value is ManifoldTransactionJSON
 
 type UserData = {
   id: string;
+  username: string;
 };
 
 const isUserData = (value: unknown): value is UserData => (
   isObjectRecord(value)
     && typeof value.id === 'string'
+    && typeof value.username === 'string'
 );
 
 type MarketData = {
@@ -45,7 +43,7 @@ type MarketData = {
 
 const isMarketData = (value: unknown): value is MarketData => (
   isObjectRecord(value)
-    && typeof value.id === 'string'
+  && typeof value.id === 'string'
 );
 
 type ResponseJson = {
@@ -71,18 +69,7 @@ enum ShareType {
   no = 'NO',
 }
 
-
-
-export default {
-  fetchTransactions,
-  sendTransfer,
-  tradeShares,
-  getMarketID,
-  getUserID,
-  ShareType
-}
-
-
+export type ManifoldTransactionCallback = (transfer: ManifoldTransfer) => void;
 
 function parceTransfer(transactions: unknown[]): ManifoldTransfer[] {
   return transactions.map(transaction => {
@@ -90,16 +77,17 @@ function parceTransfer(transactions: unknown[]): ManifoldTransfer[] {
       throw new Error('Unexpected transaction type returned from Manifold API');
     }
     return {
+      id: transaction.id,
       from: transaction.fromId, 
-      amount: transaction.amount.toString(), 
+      amount: BigInt(transaction.amount),
       memo: transaction.data.message 
     }
   });
 }
 
 // Receives user id as an argument, with default value set to my user id.
- async function  fetchTransactions(userID: string = "6DLzPFOV0LelhuLPnCECIXqsIgN2" ): Promise<ManifoldTransfer[]> {
-    const url = `https://api.manifold.markets/v0/managrams?toId=${userID}`;
+ async function  fetchTransfers(userID: string = "6DLzPFOV0LelhuLPnCECIXqsIgN2" ): Promise<ManifoldTransfer[]> {
+    const url = `https://api.manifold.markets/v0/managrams?toId=${userID}&limit=5`;
     const headers = {
       'Authorization': `Key ${config.apiKey}`,
       'Content-Type': 'application/json'
@@ -118,6 +106,27 @@ function parceTransfer(transactions: unknown[]): ManifoldTransfer[] {
     }
 
 }
+
+const onTransfer = (callback: ManifoldTransactionCallback): void => {
+
+  // TODO: store and retrieve these with a database
+  const handledTransferIds: string[] = [];
+
+  const checkForTransfers = async () => {
+    console.log('Checking for transfers...');
+    const allTransfers = await fetchTransfers();
+    allTransfers.forEach(transfer => {
+      const alreadyHandled = handledTransferIds.includes(transfer.id);
+      if (!alreadyHandled) {
+        handledTransferIds.push(transfer.id);
+        callback(transfer);
+      }
+    });
+    setTimeout(checkForTransfers, 1000);
+  };
+
+  checkForTransfers();
+};
 
 // Fetches userID by username
 
@@ -233,3 +242,35 @@ function parceTransfer(transactions: unknown[]): ManifoldTransfer[] {
     }
     return marketData.id;
   }
+
+
+const getUsername = async (userId: string): Promise<string> => {
+  const userDataResponse = await fetch(`https://api.manifold.markets/v0/user/by-id/${userId}`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Key ${config.apiKey}`,
+      'Content-Type': 'application/json'
+    }
+  });
+
+  if (!userDataResponse.ok) {
+    throw new Error(`Error fetching username: ${userDataResponse.status}`);
+  }
+
+  const userData= await userDataResponse.json();
+  if (!isUserData(userData)) {
+    throw new Error('Unexpected user type returned from Manifold API');
+  }
+  return userData.id;
+};
+
+export default {
+  fetchTransfers,
+  sendTransfer,
+  tradeShares,
+  getMarketID,
+  getUserID,
+  getUsername,
+  onTransfer,
+  ShareType
+}

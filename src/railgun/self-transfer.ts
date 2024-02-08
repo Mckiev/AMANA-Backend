@@ -13,20 +13,15 @@ import {
 import config from '../config';
 import * as Railgun from './railgun';
 import constants from '../constants';
-import { InfuraProvider, Wallet, parseUnits } from 'ethers';
+import { InfuraProvider, TransactionResponse, Wallet, parseUnits } from 'ethers';
 
-async function sendTransfer() {
-  const railgunAddress = '0zk1qyql93qvzye2893gta6y5ha7vq5g25ctnkvnf9mlwjk34pett5utfrv7j6fe3z53lu72huwn80vy3pqt9zrpcuxncuc2tr9p3mv2jtqxkp4hawccfp832zhs6cz';
-
-  // Optional encrypted memo text only readable by the sender and receiver.
-  // May include text and emojis. See "Private Transfers" page for details.
-  const memoText = 'Private transfer from Alice to Charlie';
+export async function sendTransfer(railgunAddress : string, memoText : string, amount : bigint): Promise<TransactionResponse> {
 
   // Formatted token amounts to transfer.
   const erc20AmountRecipients: RailgunERC20AmountRecipient[] = [
     {
       tokenAddress: constants.TOKENS.AMANA,
-      amount: 17n, // hexadecimal amount equivalent to 16
+      amount: amount, // hexadecimal amount equivalent to 16
       recipientAddress: railgunAddress,
     },
   ];
@@ -46,16 +41,10 @@ async function sendTransfer() {
     maxPriorityFeePerGas
   };
 
-  Railgun.initializeEngine();
-  await Railgun.loadEngineProvider();
-  Railgun.setEngineLoggers();
-
-  const railgunWalletInfo = await Railgun.createWallet(config.encryptionKey, config.mnemonic, Railgun.creationBlockNumberMap);
-  console.log(railgunWalletInfo);
+  const railgunWallet = Railgun.getWallet();
+  const railgunWalletID = railgunWallet.id;
   // Need to refresh balances, or wallet may try to spend already spent UTXOs.
   await Railgun.refreshBalances(Railgun.chain, undefined);
- 
-  const railgunWalletID = railgunWalletInfo.id;
 
   const { gasEstimate } = await gasEstimateForUnprovenTransfer(
     TXIDVersion.V2_PoseidonMerkle,
@@ -122,18 +111,8 @@ async function sendTransfer() {
   const wallet_0x = Wallet.fromPhrase(config.mnemonic, new InfuraProvider(137));
   transaction_to_send.from = wallet_0x.address;
   console.log(transaction_to_send);
-  try {
-    // Send transaction
-    const tx = await wallet_0x.sendTransaction(transaction_to_send);
-    console.log('Sending transaction', tx);
-    // Wait for transaction to be mined
-    await tx.wait();
-
-    console.log(`Transaction successful with hash: ${tx.hash}`);
-  } catch (error) {
-    console.error(`Transaction failed: ${error}`);
-  }
-  console.log('done');
+  // Send transaction
+  const tx = await wallet_0x.sendTransaction(transaction_to_send);
+  console.log('Sending transaction', tx.hash);
+  return tx;
 }
-
-sendTransfer().catch(console.error);
