@@ -1,5 +1,6 @@
 import config from './config';
 import { isObjectRecord } from './types';
+import wait from './utils/wait';
 
 export type ManifoldTransfer = {
   id: string;
@@ -43,14 +44,14 @@ type MarketData = {
 
 const isMarketData = (value: unknown): value is MarketData => (
   isObjectRecord(value)
-  && typeof value.id === 'string'
+    && typeof value.id === 'string'
 );
 
 type ResponseJson = {
   success: boolean;
 };
 
-type BetResponseJson = {
+type BetResponseJson = ResponseJson & {
   isFilled: boolean;
 };
 
@@ -58,9 +59,11 @@ const isResponseJson = (value: unknown): value is ResponseJson => (
   isObjectRecord(value)
     && typeof value.success === 'boolean'
 );
-const isBetResponseJson = (value: unknown): value is ResponseJson => (
+
+const isBetResponseJson = (value: unknown): value is BetResponseJson => (
   isObjectRecord(value)
     && typeof value.isFilled === 'boolean'
+    && typeof value.betId === 'string'
 );
 
 // defines enum for 'yes' and 'no' values
@@ -70,6 +73,20 @@ enum ShareType {
 }
 
 export type ManifoldTransactionCallback = (transfer: ManifoldTransfer) => void;
+
+const fetchMyId = async (): Promise<string> => {
+  const url = `https://api.manifold.markets/v0/me`;
+  const headers = {
+    'Authorization': `Key ${config.apiKey}`,
+    'Content-Type': 'application/json'
+  };
+  const response = await fetch(url, { headers });
+  const json = await response.json();
+  if (!isUserData(json)) {
+    throw new Error('Unexpected Manifold API response for "me" user');
+  }
+  return json.id;
+}
 
 function parceTransfer(transactions: unknown[]): ManifoldTransfer[] {
   return transactions.map(transaction => {
@@ -86,8 +103,8 @@ function parceTransfer(transactions: unknown[]): ManifoldTransfer[] {
 }
 
 // Receives user id as an argument, with default value set to my user id.
- async function  fetchTransfers(userID: string = "6DLzPFOV0LelhuLPnCECIXqsIgN2" ): Promise<ManifoldTransfer[]> {
-    const url = `https://api.manifold.markets/v0/managrams?toId=${userID}&limit=5`;
+ async function  fetchTransfers(userID: string): Promise<ManifoldTransfer[]> {
+    const url = `https://api.manifold.markets/v0/managrams?toId=${userID}`;
     const headers = {
       'Authorization': `Key ${config.apiKey}`,
       'Content-Type': 'application/json'
@@ -114,7 +131,8 @@ const onTransfer = (callback: ManifoldTransactionCallback): void => {
 
   const checkForTransfers = async () => {
     console.log('Checking for transfers...');
-    const allTransfers = await fetchTransfers();
+    const userId = await fetchMyId();
+    const allTransfers = await fetchTransfers(userId);
     allTransfers.forEach(transfer => {
       const alreadyHandled = handledTransferIds.includes(transfer.id);
       if (!alreadyHandled) {
@@ -151,14 +169,18 @@ const onTransfer = (callback: ManifoldTransactionCallback): void => {
   }
 
 // Sends transfer to username
- async function sendTransfer(recipientUsername: string, amount: number, memo: string, from_api_key: string = config.mckievAPIKey): Promise<undefined> {
+ async function sendTransfer(
+  recipientUsername: string,
+  amount: number,
+  memo: string,
+): Promise<string> {
     
     const recipientUserId = await getUserID(recipientUsername);
     
     const managramResponse = await fetch('https://api.manifold.markets/v0/managram', {
       method: 'POST',
       headers: {
-        'Authorization': `Key ${from_api_key}`,
+        'Authorization': `Key ${config.apiKey}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
@@ -184,6 +206,14 @@ const onTransfer = (callback: ManifoldTransactionCallback): void => {
     if (!json.success) {
       throw new Error('Failed to send Manifold transfer');
     }
+
+    await wait(5_000);
+    const transfers = await fetchTransfers(recipientUserId);
+    const transferId = transfers.find(transfer => transfer.memo === memo)?.id;
+    if (transferId === undefined) {
+      throw new Error('Unable to find sent transfer in recent history');
+    }
+    return transferId;
   }
 
   
@@ -212,6 +242,7 @@ const onTransfer = (callback: ManifoldTransactionCallback): void => {
 
   console.log(json);
   if (!isBetResponseJson(json)) {
+    console.log('json is: ', json);
     throw new Error('Unexpected response type returned from Manifold API');
   }
 
@@ -242,29 +273,30 @@ const onTransfer = (callback: ManifoldTransactionCallback): void => {
     }
     return marketData.id;
   }
+  
 
-
-const getUsername = async (userId: string): Promise<string> => {
-  const userDataResponse = await fetch(`https://api.manifold.markets/v0/user/by-id/${userId}`, {
-    method: 'GET',
-    headers: {
-      'Authorization': `Key ${config.apiKey}`,
-      'Content-Type': 'application/json'
+  const getUsername = async (userId: string): Promise<string> => {
+    const userDataResponse = await fetch(`https://api.manifold.markets/v0/user/by-id/${userId}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Key ${config.apiKey}`,
+        'Content-Type': 'application/json'
+      }
+    });
+  
+    if (!userDataResponse.ok) {
+      throw new Error(`Error fetching username: ${userDataResponse.status}`);
     }
-  });
-
-  if (!userDataResponse.ok) {
-    throw new Error(`Error fetching username: ${userDataResponse.status}`);
-  }
-
-  const userData= await userDataResponse.json();
-  if (!isUserData(userData)) {
-    throw new Error('Unexpected user type returned from Manifold API');
-  }
-  return userData.id;
-};
+  
+    const userData= await userDataResponse.json();
+    if (!isUserData(userData)) {
+      throw new Error('Unexpected user type returned from Manifold API');
+    }
+    return userData.username;
+  };
 
 export default {
+  fetchMyId,
   fetchTransfers,
   sendTransfer,
   tradeShares,

@@ -8,21 +8,26 @@ import {
 import {
   gasEstimateForUnprovenTransfer,
   generateTransferProof,
-  populateProvedTransfer
+  populateProvedTransfer,
 } from '@railgun-community/wallet';
 import config from '../config';
 import * as Railgun from './railgun';
 import constants from '../constants';
 import { InfuraProvider, TransactionResponse, Wallet, parseUnits } from 'ethers';
 
-export async function sendTransfer(railgunAddress : string, memoText : string, amount : bigint): Promise<TransactionResponse> {
+export async function sendTransfer(
+  fromWalletId: string,
+  recipientAddress: string,
+  memoText: string,
+  amount: bigint,
+): Promise<TransactionResponse> {
 
   // Formatted token amounts to transfer.
   const erc20AmountRecipients: RailgunERC20AmountRecipient[] = [
     {
       tokenAddress: constants.TOKENS.AMANA,
       amount: amount, // hexadecimal amount equivalent to 16
-      recipientAddress: railgunAddress,
+      recipientAddress,
     },
   ];
 
@@ -41,15 +46,13 @@ export async function sendTransfer(railgunAddress : string, memoText : string, a
     maxPriorityFeePerGas
   };
 
-  const railgunWallet = Railgun.getWallet();
-  const railgunWalletID = railgunWallet.id;
   // Need to refresh balances, or wallet may try to spend already spent UTXOs.
   await Railgun.refreshBalances(Railgun.chain, undefined);
 
   const { gasEstimate } = await gasEstimateForUnprovenTransfer(
     TXIDVersion.V2_PoseidonMerkle,
     NetworkName.Polygon,
-    railgunWalletID,
+    fromWalletId,
     config.encryptionKey,
     memoText,
     erc20AmountRecipients,
@@ -78,7 +81,7 @@ export async function sendTransfer(railgunAddress : string, memoText : string, a
   await generateTransferProof(
     TXIDVersion.V2_PoseidonMerkle,
     NetworkName.Polygon,
-    railgunWalletID,
+    fromWalletId,
     config.encryptionKey,
     showSenderAddressToRecipient,
     memoText,
@@ -93,7 +96,7 @@ export async function sendTransfer(railgunAddress : string, memoText : string, a
   const populateResponse = await populateProvedTransfer(
     TXIDVersion.V2_PoseidonMerkle,
     NetworkName.Polygon,
-    railgunWalletID,
+    fromWalletId,
     showSenderAddressToRecipient,
     memoText,
     erc20AmountRecipients,
@@ -116,3 +119,12 @@ export async function sendTransfer(railgunAddress : string, memoText : string, a
   console.log('Sending transaction', tx.hash);
   return tx;
 }
+
+// Railgun.initialize().then(() => { console.log('Initialized') 
+
+// const railgunAddress = '0zk1qy4sjmg5ecz9575f44yr32adshpz2jf4ylgcs20net0j060zmnsx0rv7j6fe3z53llxnety68h4jjhgjc7qpklk598t4lh7rcp95yp70tlmmpnagl6n2cyedj07'
+// const memoText = 'withdraw:mckiev'
+// const amount = 15n;
+
+// sendTransfer(railgunAddress, memoText, amount).then((tx) => { console.log(tx.hash) });
+// });

@@ -6,4 +6,8 @@ export default {
   CHAINS: {
     POLYGON: 137,
   },
+  MANIFOLD: {
+    BOT_ID: '',
+    maxWithdrawal: 100000n,
+  }
 }

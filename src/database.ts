@@ -1,12 +1,8 @@
 // import fs from 'fs';
 // import path from 'path';
-import { randomBytes } from 'crypto';
 import { Pool } from 'pg';
 import { isObjectRecord } from './types';
-
-const generateId = (): string => (
-  randomBytes(32).toString('hex')
-);
+import generateId from './utils/generateId';
 
 // const PG_CERT_PATH = path.join(__dirname, '../ca-certificate.crt');
 // const PG_CERT = fs.readFileSync(PG_CERT_PATH).toString();
@@ -35,19 +31,19 @@ const initialize = async () => {
       state TEXT
     );
   `);
-  // console.log('creating withdrawals table');
-  // await connection.query(`
-  //   CREATE TABLE IF NOT EXISTS Withdrawals (
-  //     id VARCHAR(64) PRIMARY KEY,
-  //     timestamp BIGINT,
-  //     railgunTransactionId TEXT,
-  //     manifoldUserId TEXT,
-  //     manifoldUsername TEXT,
-  //     manifoldTransferId TEXT,
-  //     amount BIGINT,
-  //     state TEXT
-  //   );
-  // `);
+  console.log('creating withdrawals table');
+  await connection.query(`
+    CREATE TABLE IF NOT EXISTS Withdrawals (
+      id VARCHAR(64) PRIMARY KEY,
+      timestamp BIGINT,
+      railgunTransactionId TEXT UNIQUE,
+      manifoldUserId TEXT,
+      manifoldUsername TEXT,
+      manifoldTransferId TEXT,
+      amount BIGINT,
+      state TEXT
+    );
+  `);
   // TODO:
   // Bets:
   // + id
@@ -66,10 +62,12 @@ enum DepositState {
   Confirmed = 'Confirmed',
 }
 
-// enum WithdrawalState {
-//   Requested = 'Requested',
-//   Confirmed = 'Confirmed',
-// }
+enum WithdrawalState {
+  Requested = 'Requested',
+  FailedToSend = 'FailedToSend',
+  FailedToFind = 'FailedToFind',
+  Confirmed = 'Confirmed',
+}
 
 // enum BetState {
 //   Placing = 'Placing',
@@ -99,6 +97,11 @@ const isDepositState = (value: unknown): value is DepositState => (
     && value in DepositState
 );
 
+const isWithdrawalState = (value: unknown): value is WithdrawalState => (
+  typeof value === 'string'
+    && value in WithdrawalState
+);
+
 type Deposit = {
   id: string;
   timestamp: bigint;
@@ -109,33 +112,33 @@ type Deposit = {
   state: DepositState;
 };
 
-const isDeposit = (value: unknown): value is Deposit => (
-  isObjectRecord(value)
-    && typeof value.id === 'string'
-    && typeof value.timestamp === 'bigint'
-    && typeof value.railgunAddress === 'string'
-    && typeof value.manifoldTransferId === 'string'
-    && typeof value.manifoldUserId === 'string'
-    && typeof value.amount === 'bigint'
-    && typeof value.state === 'string'
-    && value.state in DepositState
-);
+// const isDeposit = (value: unknown): value is Deposit => (
+//   isObjectRecord(value)
+//     && typeof value.id === 'string'
+//     && typeof value.timestamp === 'bigint'
+//     && typeof value.railgunAddress === 'string'
+//     && typeof value.manifoldTransferId === 'string'
+//     && typeof value.manifoldUserId === 'string'
+//     && typeof value.amount === 'bigint'
+//     && typeof value.state === 'string'
+//     && value.state in DepositState
+// );
 
-const isDeposits = (values: unknown): values is Deposit[] => (
-  Array.isArray(values)
-    && values.every(value => isDeposit(value))
-);
+// const isDeposits = (values: unknown): values is Deposit[] => (
+//   Array.isArray(values)
+//     && values.every(value => isDeposit(value))
+// );
 
-// type Withdrawal = {
-//   id: string;
-//   timestamp: bigint;
-//   railgunTransactionId: string;
-//   manifoldUserId: string;
-//   manifoldUsername: string;
-//   manifoldTransferId: string;
-//   amount: bigint;
-//   state: WithdrawalState;
-// };
+type Withdrawal = {
+  id: string;
+  timestamp: bigint;
+  railgunTransactionId: string;
+  manifoldUserId: string;
+  manifoldUsername: string;
+  manifoldTransferId?: string;
+  amount: bigint;
+  state: WithdrawalState;
+};
 
 // const isWithdrawal = (value: unknown): value is Withdrawal => (
 //   isObjectRecord(value)
@@ -211,20 +214,6 @@ const getQueuedDeposit = async (): Promise<Deposit | undefined> => {
     throw new Error('Expected the rows to be an array of string objects');
   }
   const deposits = rows.map(convertToDeposit);
-  // [
-  //   {
-  //     id: '7b4e4cca5f5d33ab9b0d242cfd7bfebf05b6bf5b35197739ca734dea1e01122a',
-  //     timestamp: '1707256725247',
-  //     railgunaddress: '0zktest',
-  //     manifoldtransferid: 'transferIdTest',
-  //     manifolduserid: 'userIdTest',
-  //     amount: '5000',
-  //     state: 'Requested'
-  //   }
-  // ]
-  if (!isDeposits(deposits)) {
-    throw new Error('Unexpected type of deposits');
-  }
   const submitted = deposits.some(deposit => deposit.state === DepositState.Submitted)
   if (submitted) { 
     return undefined;
@@ -232,27 +221,104 @@ const getQueuedDeposit = async (): Promise<Deposit | undefined> => {
   return deposits.find(deposit => deposit.state === DepositState.Requested);
 };
 
-// const createWithdrawal = async (
-//   railgunTransactionId: string,
-//   manifoldUserId: string,
-//   manifoldUsername: string,
-//   manifoldTransferId: string,
-//   amount: bigint,
-// ): Promise<string> => {
-//   const id = generateId();
-//   const state = WithdrawalState.Requested;
-//   const query = 'INSERT INTO Withdrawals (id, railgunTransactionid, manifoldUserId, manifoldUsername, manifoldTransferId, amount, state) VALUES ($1, $2, $3, $4, $5, $6, $7)';
-//   const parameters = [id, railgunTransactionId, manifoldUserId, manifoldUsername, manifoldTransferId, amount, state];
-//   // TODO: submit query to database
-//   return id;
-// };
+type WithdrawalRow = {
+  id: 'string',
+  timestamp: 'string',
+  railguntransactionid: 'string',
+  manifolduserid: 'string',
+  manifoldusername: 'string',
+  manifoldtransferid: 'string' | null,
+  amount: 'string',
+  state: 'string'
+};
 
-// const updateWithdrawalToConfirmed = async (id: string): Promise<void> => {
-//   const state = WithdrawalState.Confirmed;
-//   const query = 'UPDATE Withdrawals SET state=$1 WHERE id=$2';
-//   const parameters = [state, id];
-//   // TODO: submit query to database
-// };
+const isWithdrawalRow = (value: unknown) : value is WithdrawalRow => (
+  isObjectRecord(value)
+    && typeof value.id === 'string'
+    && typeof value.timestamp === 'string'
+    && typeof value.railguntransactionid === 'string'
+    && typeof value.manifolduserid === 'string'
+    && typeof value.manifoldusername === 'string'
+    && (
+      value.manifoldtransferid === null
+      || typeof value.manifoldtransferid === 'string'
+    )
+    && typeof value.amount === 'string'
+    && typeof value.state === 'string'
+);
+
+const convertToWithdrawal = (value: WithdrawalRow): Withdrawal => {
+  const state = value.state;
+  if (!isWithdrawalState(state)) {
+    throw new Error(`Invalid state value: ${value.state}`);
+  }
+  const timestamp = BigInt(value.timestamp);
+  const amount = BigInt(value.amount);
+
+  return {
+    id: value.id,
+    timestamp,
+    railgunTransactionId: value.railguntransactionid,
+    manifoldUserId: value.manifolduserid,
+    manifoldUsername: value.manifoldusername,
+    manifoldTransferId: (
+      value.manifoldtransferid === null
+      ? undefined
+      : value.manifoldtransferid
+    ),
+    amount,
+    state,
+  };
+};
+
+const createWithdrawal = async (
+  railgunTransactionId: string,
+  timestamp: bigint,
+  manifoldUserId: string,
+  manifoldUsername: string,
+  amount: bigint,
+): Promise<void> => {
+  const id = generateId();
+  const state = WithdrawalState.Requested;
+  const query = 'INSERT INTO Withdrawals (id, timestamp, railgunTransactionid, manifoldUserId, manifoldUsername, manifoldTransferId, amount, state) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT DO NOTHING';
+  const parameters = [id, timestamp, railgunTransactionId, manifoldUserId, manifoldUsername, null, amount, state];
+  await connection.query(query, parameters);
+};
+
+const getQueuedWithdrawal = async (): Promise<Withdrawal | undefined> => {
+  const query = 'SELECT * FROM Withdrawals WHERE state=$1 ORDER BY timestamp ASC LIMIT 1';
+  const parameters = [WithdrawalState.Requested];
+  const results = await connection.query(query, parameters);
+  const row: unknown = results.rows[0];
+  if (row === undefined) {
+    return undefined;
+  }
+  if (!isWithdrawalRow(row)) {
+    throw new Error('Expected the row to be a WithdrawalRow');
+  }
+  return convertToWithdrawal(row);
+};
+
+const updateWithdrawalToConfirmed = async (id: string, manifoldTransferId: string): Promise<void> => {
+  const state = WithdrawalState.Confirmed;
+  const query = 'UPDATE Withdrawals SET state=$1, manifoldTransferId=$2 WHERE id=$3';
+  const parameters = [state, manifoldTransferId, id];
+  await connection.query(query, parameters);
+};
+
+const updateWithdrawToFailedToFind = async (id: string): Promise<void> => {
+  const state = WithdrawalState.FailedToFind;
+  const query = 'UPDATE Withdrawals SET state=$1 WHERE id=$2';
+  const parameters = [state, id];
+  await connection.query(query, parameters);
+};
+
+const updateWithdrawToFailedToSend = async (id: string): Promise<void> => {
+  const state = WithdrawalState.FailedToSend;
+  const query = 'UPDATE Withdrawals SET state=$1 WHERE id=$2';
+  const parameters = [state, id];
+  await connection.query(query, parameters);
+};
 
 export default {
   initialize,
@@ -260,6 +326,9 @@ export default {
   updateDepositToSubmitted,
   updateDepositToConfirmed,
   getQueuedDeposit,
-  // createWithdrawal,
-  // updateWithdrawalToConfirmed,
+  getQueuedWithdrawal,
+  createWithdrawal,
+  updateWithdrawalToConfirmed,
+  updateWithdrawToFailedToFind,
+  updateWithdrawToFailedToSend,
 };

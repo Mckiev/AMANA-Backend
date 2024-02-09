@@ -9,6 +9,7 @@ jobs:
       MANIFOLD_BOT_API_KEY: ${{ secrets.MANIFOLD_BOT_API_KEY }}
       MANIFOLD_MCKIEV_API_KEY: ${{ secrets.MANIFOLD_MCKIEV_API_KEY }}
       TEST_MNEMONIC: ${{ secrets.TEST_MNEMONIC }}
+      TEST_USER_MNEMONIC: ${{ secrets.TEST_USER_MNEMONIC }}
 
     steps:
     - uses: actions/checkout@v3
