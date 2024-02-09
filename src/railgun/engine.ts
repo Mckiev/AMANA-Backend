@@ -1,10 +1,9 @@
 import {getProver, loadProvider, setLoggers, startRailgunEngine, SnarkJSGroth16} from '@railgun-community/wallet';
-import{ MerkletreeScanUpdateEvent, RailgunBalancesEvent, Chain, NetworkName, FallbackProviderJsonConfig} from '@railgun-community/shared-models';
-import {POIList, AbstractWallet} from '@railgun-community/engine';
+import{ MerkletreeScanUpdateEvent, NetworkName, FallbackProviderJsonConfig} from '@railgun-community/shared-models';
+import {POIList} from '@railgun-community/engine';
 import { groth16 } from 'snarkjs';
 import Level from 'leveldown';
 import { createArtifactStore } from './create-artifact-store';
-import { TxHistoryInfo} from './utils';
 
 export type Optional<T> = T | null | undefined;
 

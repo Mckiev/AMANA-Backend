@@ -1,4 +1,3 @@
-import { Mnemonic, randomBytes } from 'ethers';
 import * as dotenv from 'dotenv';
 import constants from './constants';
 dotenv.config();

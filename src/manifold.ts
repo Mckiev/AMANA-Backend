@@ -62,8 +62,8 @@ const isResponseJson = (value: unknown): value is ResponseJson => (
 
 const isBetResponseJson = (value: unknown): value is BetResponseJson => (
   isObjectRecord(value)
-    && typeof value.success === 'boolean'
     && typeof value.isFilled === 'boolean'
+    && typeof value.betId === 'string'
 );
 
 // defines enum for 'yes' and 'no' values
@@ -242,6 +242,7 @@ const onTransfer = (callback: ManifoldTransactionCallback): void => {
 
   console.log(json);
   if (!isBetResponseJson(json)) {
+    console.log('json is: ', json);
     throw new Error('Unexpected response type returned from Manifold API');
   }
 

@@ -40,13 +40,13 @@ const main = async() => {
   Manifold.onTransfer(handleManifoldTransfer);
   Railgun.onTransaction(handleRailgunTransaction);
 
-  await wait(15_000);
-  console.log('Sending test transfer...');
-  const railgunWalletInfo = await Railgun.createWallet(config.encryptionKey, config.userMnemonic, Railgun.creationBlockNumberMap);
-  console.log('Sending from address', railgunWalletInfo.railgunAddress);
-  const tx = await Railgun.sendTransfer(railgunWalletInfo.id, Railgun.getWallet().getAddress(), 'withdraw:mckiev', 12n);
-  console.log('Sent test transfer.');
-  console.log(tx);
+  // await wait(15_000);
+  // console.log('Sending test transfer...');
+  // const railgunWalletInfo = await Railgun.createWallet(config.encryptionKey, config.userMnemonic, Railgun.creationBlockNumberMap);
+  // console.log('Sending from address', railgunWalletInfo.railgunAddress);
+  // const tx = await Railgun.sendTransfer(railgunWalletInfo.id, Railgun.getWallet().getAddress(), 'withdraw:mckiev', 12n);
+  // console.log('Sent test transfer.');
+  // console.log(tx);
 };
 
 main().catch(console.error);
