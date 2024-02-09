@@ -5,8 +5,8 @@ import Manifold, { ManifoldTransactionCallback } from "./manifold";
 import database from './database';
 import depositProcessor from './depositProcessor';
 import withdrawalProcessor from './withdrawalProcessor';
-import config from './config';
-import wait from './utils/wait';
+// import config from './config';
+// import wait from './utils/wait';
 
 const handleManifoldTransfer: ManifoldTransactionCallback = async (transfer) => {
   // console.log('handling a transfer', transfer);
