@@ -12,7 +12,7 @@ export type TxHistoryInfo = {
     };
 
 export const logTransactionDetails = (transactions: TransactionHistoryEntry[]): void => {
-    console.log('Logging transaction details...');
+    // console.log('Logging transaction details...');
     // TODO make this properly display outgoing transactions as well
 
     // OUTGOING transaction example:
@@ -127,11 +127,14 @@ export async function fetchTransactionHistory(wallet:AbstractWallet, chain: Chai
     }
   }
 
-const convertTransaction = (tx: TransactionHistoryEntry): RailgunTransaction => {
+const convertTransaction = (tx: TransactionHistoryEntry): RailgunTransaction | undefined => {
+    if (tx.receiveTokenAmounts.length === 0) {
+        return undefined;
+    }
     const tokenAddress = tx.receiveTokenAmounts[0]?.tokenData.tokenAddress ?? '';
     const amount = tx.receiveTokenAmounts[0]?.amount ?? 0n;
     const memo = tx.receiveTokenAmounts[0]?.memoText ?? '';
-    const recipientAddress = tx.transferTokenAmounts[0]?.recipientAddress ?? '';
+    const recipientAddress = getWallet().getAddress();
     const timestamp = BigInt(Math.floor(tx.timestamp * 1000));
     return {
         txid: tx.txid,
@@ -143,14 +146,20 @@ const convertTransaction = (tx: TransactionHistoryEntry): RailgunTransaction => 
     };
 }
 
+const isRailgunTransaction = (value: RailgunTransaction | undefined): value is RailgunTransaction => {
+    return value !== undefined;
+};
+
 export async function fetchNewTransactions(): Promise<RailgunTransaction[]>{
     console.log('Fetching new transactions');
     const wallet = getWallet();
     // await refreshBalances(chain, undefined);
     try {
         const currentTransactionHistory = await wallet.getTransactionHistory(chain, undefined);
-        console.log('Latest transactions:', currentTransactionHistory);
-        return currentTransactionHistory.map(convertTransaction);
+        // console.log('Latest transactions:', currentTransactionHistory);
+        return currentTransactionHistory
+            .map(convertTransaction)
+            .filter(isRailgunTransaction);
     } catch (error) {
         console.error('Error encountered:', error);
         throw error;
@@ -191,8 +200,8 @@ export const onTransaction = (callback: RailgunTransactionCallback): void => {
         allTransactions.forEach(transaction => {
             const alreadyHandled = handledTxIds[transaction.txid] === true;
             if (!alreadyHandled) {
-            handledTxIds[transaction.txid] = true;
-            callback(transaction);
+                handledTxIds[transaction.txid] = true;
+                callback(transaction);
             }
         });
     });

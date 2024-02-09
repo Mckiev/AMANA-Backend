@@ -8,21 +8,26 @@ import {
 import {
   gasEstimateForUnprovenTransfer,
   generateTransferProof,
-  populateProvedTransfer
+  populateProvedTransfer,
 } from '@railgun-community/wallet';
 import config from '../config';
 import * as Railgun from './railgun';
 import constants from '../constants';
 import { InfuraProvider, TransactionResponse, Wallet, parseUnits } from 'ethers';
 
-export async function sendTransfer(railgunAddress : string, memoText : string, amount : bigint): Promise<TransactionResponse> {
+export async function sendTransfer(
+  fromWalletId: string,
+  recipientAddress: string,
+  memoText: string,
+  amount: bigint,
+): Promise<TransactionResponse> {
 
   // Formatted token amounts to transfer.
   const erc20AmountRecipients: RailgunERC20AmountRecipient[] = [
     {
       tokenAddress: constants.TOKENS.AMANA,
       amount: amount, // hexadecimal amount equivalent to 16
-      recipientAddress: railgunAddress,
+      recipientAddress,
     },
   ];
 
@@ -41,15 +46,13 @@ export async function sendTransfer(railgunAddress : string, memoText : string, a
     maxPriorityFeePerGas
   };
 
-  const railgunWallet = Railgun.getWallet();
-  const railgunWalletID = railgunWallet.id;
   // Need to refresh balances, or wallet may try to spend already spent UTXOs.
   await Railgun.refreshBalances(Railgun.chain, undefined);
 
   const { gasEstimate } = await gasEstimateForUnprovenTransfer(
     TXIDVersion.V2_PoseidonMerkle,
     NetworkName.Polygon,
-    railgunWalletID,
+    fromWalletId,
     config.encryptionKey,
     memoText,
     erc20AmountRecipients,
@@ -78,7 +81,7 @@ export async function sendTransfer(railgunAddress : string, memoText : string, a
   await generateTransferProof(
     TXIDVersion.V2_PoseidonMerkle,
     NetworkName.Polygon,
-    railgunWalletID,
+    fromWalletId,
     config.encryptionKey,
     showSenderAddressToRecipient,
     memoText,
@@ -93,7 +96,7 @@ export async function sendTransfer(railgunAddress : string, memoText : string, a
   const populateResponse = await populateProvedTransfer(
     TXIDVersion.V2_PoseidonMerkle,
     NetworkName.Polygon,
-    railgunWalletID,
+    fromWalletId,
     showSenderAddressToRecipient,
     memoText,
     erc20AmountRecipients,

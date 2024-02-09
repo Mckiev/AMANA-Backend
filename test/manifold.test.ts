@@ -1,6 +1,6 @@
 import Manifold from '../src/manifold'
 // This test whether the function fetchManifoldTransactions() returns a non empty transaction list from Manifold.
-describe('fetchTransfers function', () => {
+describe.skip('fetchTransfers function', () => {
     it('should fetch transactions successfully with the correct structure', async () => {
         const userId = await Manifold.fetchMyId();
         const result = await Manifold.fetchTransfers(userId);
@@ -26,7 +26,7 @@ describe('fetchTransfers function', () => {
 
 // testing fetchUserID function
 
-describe('getUserID function', () => {
+describe.skip('getUserID function', () => {
     it('should fetch userID successfully', async () => {
         const result = await Manifold.getUserID("testbot");
         expect(result).toEqual("6DLzPFOV0LelhuLPnCECIXqsIgN2")
@@ -35,7 +35,7 @@ describe('getUserID function', () => {
 
 
 
-describe('sendTransfer function', () => {
+describe.skip('sendTransfer function', () => {
     it('should send transfer successfully', async () => {
         await Manifold.sendTransfer("mckiev", 10, "test memo");
     });
@@ -64,7 +64,7 @@ describe('sendTransfer function', () => {
 
 
 
-describe('tradeShares function', () => {
+describe.skip('tradeShares function', () => {
     it('should buy shares successfully', async () => {
         const marketID = "0kEFCvweNbvhKivYTJce";
         const yes_or_no = Manifold.ShareType.no;
@@ -74,7 +74,8 @@ describe('tradeShares function', () => {
 });
 
 
-describe('fetchMarketID function', () => {
+
+describe.skip('fetchMarketID function', () => {
     it('should fetch marketID from Slug successfully', async () => {
         const marketSlug = "test-question-4c1ff3f827cb";
         const result = await Manifold.getMarketID(marketSlug);

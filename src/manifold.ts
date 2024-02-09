@@ -1,5 +1,6 @@
 import config from './config';
 import { isObjectRecord } from './types';
+import wait from './utils/wait';
 
 export type ManifoldTransfer = {
   id: string;
@@ -54,10 +55,6 @@ type BetResponseJson = ResponseJson & {
   isFilled: boolean;
 };
 
-type ManagramResponseJson = ResponseJson & {
-  id: string;
-};
-
 const isResponseJson = (value: unknown): value is ResponseJson => (
   isObjectRecord(value)
     && typeof value.success === 'boolean'
@@ -67,12 +64,6 @@ const isBetResponseJson = (value: unknown): value is BetResponseJson => (
   isObjectRecord(value)
     && typeof value.success === 'boolean'
     && typeof value.isFilled === 'boolean'
-);
-
-const isManagramResponseJson = (value: unknown): value is ManagramResponseJson => (
-  isObjectRecord(value)
-    && typeof value.success === 'boolean'
-    && typeof value.id === 'string'
 );
 
 // defines enum for 'yes' and 'no' values
@@ -208,7 +199,7 @@ const onTransfer = (callback: ManifoldTransactionCallback): void => {
 
     const json: ResponseJson = await managramResponse.json();
 
-    if (!isManagramResponseJson(json)) {
+    if (!isResponseJson(json)) {
       throw new Error('Unexpected response type returned from Manifold API');
     }
 
@@ -216,7 +207,13 @@ const onTransfer = (callback: ManifoldTransactionCallback): void => {
       throw new Error('Failed to send Manifold transfer');
     }
 
-    return json.id;
+    await wait(5_000);
+    const transfers = await fetchTransfers(recipientUserId);
+    const transferId = transfers.find(transfer => transfer.memo === memo)?.id;
+    if (transferId === undefined) {
+      throw new Error('Unable to find sent transfer in recent history');
+    }
+    return transferId;
   }
 
   

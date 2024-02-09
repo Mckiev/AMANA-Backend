@@ -1,13 +1,8 @@
 // import fs from 'fs';
 // import path from 'path';
-import { randomBytes } from 'crypto';
 import { Pool } from 'pg';
 import { isObjectRecord } from './types';
-
-
-const generateId = (): string => (
-  randomBytes(32).toString('hex')
-);
+import generateId from './utils/generateId';
 
 // const PG_CERT_PATH = path.join(__dirname, '../ca-certificate.crt');
 // const PG_CERT = fs.readFileSync(PG_CERT_PATH).toString();
@@ -69,6 +64,8 @@ enum DepositState {
 
 enum WithdrawalState {
   Requested = 'Requested',
+  FailedToSend = 'FailedToSend',
+  FailedToFind = 'FailedToFind',
   Confirmed = 'Confirmed',
 }
 
@@ -300,12 +297,26 @@ const getQueuedWithdrawal = async (): Promise<Withdrawal | undefined> => {
     throw new Error('Expected the row to be a WithdrawalRow');
   }
   return convertToWithdrawal(row);
-}
+};
 
 const updateWithdrawalToConfirmed = async (id: string, manifoldTransferId: string): Promise<void> => {
   const state = WithdrawalState.Confirmed;
   const query = 'UPDATE Withdrawals SET state=$1, manifoldTransferId=$2 WHERE id=$3';
   const parameters = [state, manifoldTransferId, id];
+  await connection.query(query, parameters);
+};
+
+const updateWithdrawToFailedToFind = async (id: string): Promise<void> => {
+  const state = WithdrawalState.FailedToFind;
+  const query = 'UPDATE Withdrawals SET state=$1 WHERE id=$2';
+  const parameters = [state, id];
+  await connection.query(query, parameters);
+};
+
+const updateWithdrawToFailedToSend = async (id: string): Promise<void> => {
+  const state = WithdrawalState.FailedToSend;
+  const query = 'UPDATE Withdrawals SET state=$1 WHERE id=$2';
+  const parameters = [state, id];
   await connection.query(query, parameters);
 };
 
@@ -318,4 +329,6 @@ export default {
   getQueuedWithdrawal,
   createWithdrawal,
   updateWithdrawalToConfirmed,
+  updateWithdrawToFailedToFind,
+  updateWithdrawToFailedToSend,
 };
