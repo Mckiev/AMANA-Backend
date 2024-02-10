@@ -3,6 +3,7 @@
 import { Pool } from 'pg';
 import { isObjectRecord } from './types';
 import generateId from './utils/generateId';
+import {ShareType} from './manifold';
 
 // const PG_CERT_PATH = path.join(__dirname, '../ca-certificate.crt');
 // const PG_CERT = fs.readFileSync(PG_CERT_PATH).toString();
@@ -112,9 +113,9 @@ type Bet = {
   amount: bigint;
   marketUrl: string;
   marketId: string;
-  prediction: string;
+  prediction: ShareType;
   redemptionAddress: string;
-  betId: string;
+  betId: string | undefined;
   state: BetState;
 };
 
@@ -153,7 +154,7 @@ type BetRow = {
   marketid: 'string',
   prediction: 'string',
   redemptionaddress: 'string',
-  betid: 'string' || null,
+  betid: 'string' | null,
   state: 'string'
 };
 
@@ -356,6 +357,14 @@ const convertToBet = (value: BetRow): Bet => {
   }
   const timestamp = BigInt(value.timestamp);
   const amount = BigInt(value.amount);
+  let prediction: ShareType;
+  if (value.prediction.toUpperCase() == 'YES') {
+    prediction = ShareType.yes;
+  } else if (value.prediction.toUpperCase() == 'NO') {
+    prediction = ShareType.no;
+  } else {
+    throw new Error(`Invalid prediction value: ${value.prediction}`);
+  }
 
   return {
     id: value.id,
@@ -364,7 +373,7 @@ const convertToBet = (value: BetRow): Bet => {
     amount,
     marketUrl: value.marketurl,
     marketId: value.marketid,
-    prediction: value.prediction,
+    prediction,
     redemptionAddress: value.redemptionaddress,
     betId: (
       value.betid === null
@@ -394,7 +403,7 @@ const createBet = async (
 const getQueuedBet = async (): Promise<Bet | undefined> => {
   const query = 'SELECT * FROM Bets WHERE state=$1 ORDER BY timestamp ASC LIMIT 1';
   const parameters = [BetState.Placing];
-  const results = await connection.query
+  const results = await connection.query(query, parameters);
   const row: unknown = results.rows[0];
   if (row === undefined) {
     return undefined;
@@ -411,6 +420,8 @@ const updateBetToPlaced = async (id: string, betId: string): Promise<void> => {
   const parameters = [state, betId, id];
   await connection.query(query, parameters);
 }
+
+
 
 
 export default {
