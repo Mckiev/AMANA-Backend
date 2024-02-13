@@ -57,6 +57,7 @@ const initialize = async () => {
       prediction TEXT,
       redemptionAddress TEXT,
       betId TEXT,
+      nShares INTEGER,
       state TEXT
     );
   `);
@@ -116,6 +117,7 @@ type Bet = {
   prediction: ShareType;
   redemptionAddress: string;
   betId: string | undefined;
+  nShares: number | undefined;
   state: BetState;
 };
 
@@ -155,6 +157,7 @@ type BetRow = {
   prediction: 'string',
   redemptionaddress: 'string',
   betid: 'string' | null,
+  nshares: 'string' | null,
   state: 'string'
 };
 
@@ -171,6 +174,10 @@ const isBetRow = (value: unknown) : value is BetRow => (
     &&  (
       value.betid === null
       || typeof value.betid === 'string'
+    )
+    &&  (
+      value.nshares === null
+      || typeof value.nshares === 'string'
     )
     && typeof value.state === 'string'
 );
@@ -380,6 +387,11 @@ const convertToBet = (value: BetRow): Bet => {
       ? undefined
       : value.betid
     ),
+    nShares: (
+      value.nshares === null
+      ? undefined
+      : parseInt(value.nshares)
+    ),
     state,
   };
 };
@@ -395,8 +407,8 @@ const createBet = async (
 ): Promise<void> => {
   const id = generateId();
   const state = BetState.Placing;
-  const query = 'INSERT INTO Bets (id, timestamp, railgunTransactionid, amount, marketUrl, marketId, prediction, redemptionAddress, betId, state) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT DO NOTHING';
-  const parameters = [id, timestamp, railgunTransactionId, amount, marketUrl, marketId, prediction, redemptionAddress, null, state];
+  const query = 'INSERT INTO Bets (id, timestamp, railgunTransactionid, amount, marketUrl, marketId, prediction, redemptionAddress, nShares, betId, state) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) ON CONFLICT DO NOTHING';
+  const parameters = [id, timestamp, railgunTransactionId, amount, marketUrl, marketId, prediction, redemptionAddress, null, null, state];
   await connection.query(query, parameters);
 }
 
@@ -414,10 +426,10 @@ const getQueuedBet = async (): Promise<Bet | undefined> => {
   return convertToBet(row);
 }
 
-const updateBetToPlaced = async (id: string, betId: string): Promise<void> => {
+const updateBetToPlaced = async (id: string, betId: string, nShares: number): Promise<void> => {
   const state = BetState.Placed;
-  const query = 'UPDATE Bets SET state=$1, betId=$2 WHERE id=$3';
-  const parameters = [state, betId, id];
+  const query = 'UPDATE Bets SET state=$1, betId=$2, nShares=$3 WHERE id=$4';
+  const parameters = [state, betId, nShares, id];
   await connection.query(query, parameters);
 }
 

@@ -12,12 +12,12 @@ const processBets = async (): Promise<void> => {
         console.error('Bet amount exceeds maximum');
       } else {
         try {
-          const manifoldBetId = await Manifold.tradeShares(bet.marketId, bet.prediction, Number(bet.amount));
+          const [manifoldBetId, nShares] = await Manifold.tradeShares(bet.marketId, bet.prediction, Number(bet.amount));
           if (manifoldBetId === undefined) {
             throw new Error('Failed to place bet');
             //TODO - change bet status to failed
           } else {  
-          database.updateBetToPlaced(bet.id, manifoldBetId);
+          database.updateBetToPlaced(bet.id, manifoldBetId, nShares);
           }
         } catch (e: unknown) {
           console.warn('Failed to process a bet correctly');
