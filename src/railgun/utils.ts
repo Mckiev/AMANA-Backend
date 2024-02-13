@@ -229,7 +229,8 @@ export function extractUsernameWithTrim(input: string): string {
 
 export function extractBet(input: string): string[] {
     // Assumes we are receiving a memo in format "bet:<manifoldMarketSlug>:<prediction>:<redemptionAddress>"
-    let [ marketSlug, prediction, redemptionAddress ] = input.split(':').slice(1).map(part => part.trim());
+    const [ extractedMarketSlug, prediction, redemptionAddress ] = input.split(':').slice(1).map(part => part.trim());
+    let marketSlug = extractedMarketSlug;
     // stripping slug to everything after the last slash if there is one
     marketSlug = marketSlug.split('/').pop() ?? marketSlug;
     console.log('Extracted bet:', marketSlug, prediction, redemptionAddress);
