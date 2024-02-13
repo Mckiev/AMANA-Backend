@@ -1,8 +1,26 @@
 // import fs from 'fs';
 // import path from 'path';
 import { Pool } from 'pg';
-import { isObjectRecord } from './types';
 import generateId from './utils/generateId';
+import {ShareType} from './manifold';
+import {
+  isArrayOfStringObjects,
+  isDepositState,
+  isWithdrawalState,
+  isBetState,
+  isWithdrawalRow,
+  isBetRow,
+  StringObject,
+  WithdrawalState,
+  DepositState,
+  BetState,
+  Deposit,
+  Withdrawal,
+  Bet,
+  BetRow,
+  WithdrawalRow,
+} from './types';
+
 
 // const PG_CERT_PATH = path.join(__dirname, '../ca-certificate.crt');
 // const PG_CERT = fs.readFileSync(PG_CERT_PATH).toString();
@@ -44,119 +62,26 @@ const initialize = async () => {
       state TEXT
     );
   `);
-  // TODO:
-  // Bets:
-  // + id
-  // + timestamp
-  // + railgunTransactionId
-  // + amount
-  // + marketUrl
-  // + prediction
-  // + redemptionAddress
-  // + state = (placing, placed, redeeming, redeemed)
+  console.log('creating bets table');
+  await connection.query(`
+    CREATE TABLE IF NOT EXISTS Bets (
+      id VARCHAR(64) PRIMARY KEY,
+      timestamp BIGINT,
+      railgunTransactionId TEXT UNIQUE,
+      amount BIGINT,
+      marketUrl TEXT,
+      marketId TEXT,
+      prediction TEXT,
+      redemptionAddress TEXT,
+      betId TEXT,
+      nShares INTEGER,
+      state TEXT
+    );
+  `);
 };
 
-enum DepositState {
-  Requested = 'Requested',
-  Submitted = 'Submitted',
-  Confirmed = 'Confirmed',
-}
 
-enum WithdrawalState {
-  Requested = 'Requested',
-  FailedToSend = 'FailedToSend',
-  FailedToFind = 'FailedToFind',
-  Confirmed = 'Confirmed',
-}
-
-// enum BetState {
-//   Placing = 'Placing',
-//   Placed = 'Placed',
-//   Redeeming = 'Redeeming',
-//   Redeemed = 'Redeemed',
-// }
-
-type StringObject = { [key: string]: string };
-
-const isStringObject = (item: unknown): item is StringObject => (
-  typeof item === 'object'
-    && item !== null
-    && Object.entries(item).every(([key, value]) => (
-      typeof key === 'string'
-        && typeof value === 'string'
-    ))
-);
-
-const isArrayOfStringObjects = (values: unknown): values is StringObject[] => (
-  Array.isArray(values)
-    && values.every(isStringObject)
-);
-
-const isDepositState = (value: unknown): value is DepositState => (
-  typeof value === 'string'
-    && value in DepositState
-);
-
-const isWithdrawalState = (value: unknown): value is WithdrawalState => (
-  typeof value === 'string'
-    && value in WithdrawalState
-);
-
-type Deposit = {
-  id: string;
-  timestamp: bigint;
-  railgunAddress: string;
-  manifoldTransferId: string;
-  manifoldUserId: string;
-  amount: bigint;
-  state: DepositState;
-};
-
-// const isDeposit = (value: unknown): value is Deposit => (
-//   isObjectRecord(value)
-//     && typeof value.id === 'string'
-//     && typeof value.timestamp === 'bigint'
-//     && typeof value.railgunAddress === 'string'
-//     && typeof value.manifoldTransferId === 'string'
-//     && typeof value.manifoldUserId === 'string'
-//     && typeof value.amount === 'bigint'
-//     && typeof value.state === 'string'
-//     && value.state in DepositState
-// );
-
-// const isDeposits = (values: unknown): values is Deposit[] => (
-//   Array.isArray(values)
-//     && values.every(value => isDeposit(value))
-// );
-
-type Withdrawal = {
-  id: string;
-  timestamp: bigint;
-  railgunTransactionId: string;
-  manifoldUserId: string;
-  manifoldUsername: string;
-  manifoldTransferId?: string;
-  amount: bigint;
-  state: WithdrawalState;
-};
-
-// const isWithdrawal = (value: unknown): value is Withdrawal => (
-//   isObjectRecord(value)
-//     && typeof value.id === 'string'
-//     && typeof value.timestamp === 'bigint'
-//     && typeof value.railgunTransactionId === 'string'
-//     && typeof value.manifoldUserId === 'string'
-//     && typeof value.manifoldUsername === 'string'
-//     && typeof value.manifoldTransferId === 'string'
-//     && typeof value.amount === 'bigint'
-//     && typeof value.state === 'string'
-//     && value.state in WithdrawalState
-// );
-
-// const isWithdrawals = (values: unknown): values is Withdrawal[] => (
-//   Array.isArray(values)
-//     && values.every(value => isWithdrawal(value))
-// );
+// deposit related functions
 
 const createDepositIfNotExists = async (
   railgunAddress: string,
@@ -221,31 +146,9 @@ const getQueuedDeposit = async (): Promise<Deposit | undefined> => {
   return deposits.find(deposit => deposit.state === DepositState.Requested);
 };
 
-type WithdrawalRow = {
-  id: 'string',
-  timestamp: 'string',
-  railguntransactionid: 'string',
-  manifolduserid: 'string',
-  manifoldusername: 'string',
-  manifoldtransferid: 'string' | null,
-  amount: 'string',
-  state: 'string'
-};
 
-const isWithdrawalRow = (value: unknown) : value is WithdrawalRow => (
-  isObjectRecord(value)
-    && typeof value.id === 'string'
-    && typeof value.timestamp === 'string'
-    && typeof value.railguntransactionid === 'string'
-    && typeof value.manifolduserid === 'string'
-    && typeof value.manifoldusername === 'string'
-    && (
-      value.manifoldtransferid === null
-      || typeof value.manifoldtransferid === 'string'
-    )
-    && typeof value.amount === 'string'
-    && typeof value.state === 'string'
-);
+
+// withdrawal related functions
 
 const convertToWithdrawal = (value: WithdrawalRow): Withdrawal => {
   const state = value.state;
@@ -320,6 +223,85 @@ const updateWithdrawToFailedToSend = async (id: string): Promise<void> => {
   await connection.query(query, parameters);
 };
 
+// bet related functions
+
+const convertToBet = (value: BetRow): Bet => {
+  const state = value.state;
+  if (!isBetState(state)) {
+    throw new Error(`Invalid state value: ${value.state}`);
+  }
+  const timestamp = BigInt(value.timestamp);
+  const amount = BigInt(value.amount);
+  let prediction: ShareType;
+  if (value.prediction.toUpperCase() == 'YES') {
+    prediction = ShareType.yes;
+  } else if (value.prediction.toUpperCase() == 'NO') {
+    prediction = ShareType.no;
+  } else {
+    throw new Error(`Invalid prediction value: ${value.prediction}`);
+  }
+
+  return {
+    id: value.id,
+    timestamp,
+    railgunTransactionId: value.railguntransactionid,
+    amount,
+    marketUrl: value.marketurl,
+    marketId: value.marketid,
+    prediction,
+    redemptionAddress: value.redemptionaddress,
+    betId: (
+      value.betid === null
+      ? undefined
+      : value.betid
+    ),
+    nShares: (
+      value.nshares === null
+      ? undefined
+      : parseInt(value.nshares)
+    ),
+    state,
+  };
+};
+
+const createBet = async (
+  railgunTransactionId: string,
+  timestamp: bigint,
+  amount: bigint,
+  marketUrl: string,
+  marketId: string,
+  prediction: string,
+  redemptionAddress: string,
+): Promise<void> => {
+  const id = generateId();
+  const state = BetState.Placing;
+  const query = 'INSERT INTO Bets (id, timestamp, railgunTransactionid, amount, marketUrl, marketId, prediction, redemptionAddress, nShares, betId, state) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) ON CONFLICT DO NOTHING';
+  const parameters = [id, timestamp, railgunTransactionId, amount, marketUrl, marketId, prediction, redemptionAddress, null, null, state];
+  await connection.query(query, parameters);
+}
+
+const getQueuedBet = async (): Promise<Bet | undefined> => {
+  const query = 'SELECT * FROM Bets WHERE state=$1 ORDER BY timestamp ASC LIMIT 1';
+  const parameters = [BetState.Placing];
+  const results = await connection.query(query, parameters);
+  const row: unknown = results.rows[0];
+  if (row === undefined) {
+    return undefined;
+  }
+  if (!isBetRow(row)) {
+    throw new Error('Expected the row to be a BetRow');
+  }
+  return convertToBet(row);
+}
+
+const updateBetToPlaced = async (id: string, betId: string, nShares: number): Promise<void> => {
+  const state = BetState.Placed;
+  const query = 'UPDATE Bets SET state=$1, betId=$2, nShares=$3 WHERE id=$4';
+  const parameters = [state, betId, nShares, id];
+  await connection.query(query, parameters);
+}
+
+
 export default {
   initialize,
   createDepositIfNotExists,
@@ -331,4 +313,7 @@ export default {
   updateWithdrawalToConfirmed,
   updateWithdrawToFailedToFind,
   updateWithdrawToFailedToSend,
+  createBet,
+  getQueuedBet,
+  updateBetToPlaced,
 };

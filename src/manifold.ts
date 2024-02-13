@@ -53,6 +53,8 @@ type ResponseJson = {
 
 type BetResponseJson = ResponseJson & {
   isFilled: boolean;
+  betId: string;
+  shares: string;
 };
 
 const isResponseJson = (value: unknown): value is ResponseJson => (
@@ -66,8 +68,7 @@ const isBetResponseJson = (value: unknown): value is BetResponseJson => (
     && typeof value.betId === 'string'
 );
 
-// defines enum for 'yes' and 'no' values
-enum ShareType {
+export enum ShareType {
   yes = 'YES',
   no = 'NO',
 }
@@ -217,7 +218,7 @@ const onTransfer = (callback: ManifoldTransactionCallback): void => {
   }
 
   
- async function tradeShares(marketID: string, yes_or_no: ShareType, amount: number, from_api_key: string = config.apiKey): Promise<undefined> {
+ async function tradeShares(marketID: string, yes_or_no: ShareType, amount: number, from_api_key: string = config.apiKey): Promise<[string, number]> {
   const tradeSharesResponse = await fetch(`https://api.manifold.markets/v0/bet`, {
     method: 'POST',
     headers: {
@@ -249,7 +250,8 @@ const onTransfer = (callback: ManifoldTransactionCallback): void => {
   if (!json.isFilled) {
     throw new Error('Failed to buy shares');
   }
-  
+  console.log('json response is: ', JSON.stringify(json));
+  return [json.betId, parseInt(json.shares)];
 }
 
 // Fetches market ID by it's slug
@@ -263,6 +265,8 @@ const onTransfer = (callback: ManifoldTransactionCallback): void => {
     });
   
     if (!marketDataResponse.ok) {
+      //TODO handle this better
+      console.log('MarketSlug is: ', market_slug);
       throw new Error(`Error fetching market ID: ${marketDataResponse.status}`);
     }
 

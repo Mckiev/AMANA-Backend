@@ -208,7 +208,14 @@ export const onTransaction = (callback: RailgunTransactionCallback): void => {
   };
 
 export function isTransactionWithdrawal(tx: RailgunTransaction): boolean {
-    return tx.memo.toLowerCase().includes('withdraw')
+    return tx.memo.toLowerCase().includes('withdraw:')
+        && tx.recipientAddress.toLowerCase() === getWallet().getAddress().toLowerCase()
+        && tx.tokenAddress.toLocaleLowerCase() === constants.TOKENS.AMANA.toLowerCase()
+        && tx.amount > 0n;
+}
+
+export function isTransactionBet(tx: RailgunTransaction): boolean {
+    return tx.memo.toLowerCase().includes('bet:')
         && tx.recipientAddress.toLowerCase() === getWallet().getAddress().toLowerCase()
         && tx.tokenAddress.toLocaleLowerCase() === constants.TOKENS.AMANA.toLowerCase()
         && tx.amount > 0n;
@@ -219,3 +226,13 @@ export function extractUsernameWithTrim(input: string): string {
     const parts = input.split('withdraw:');
     return parts.length > 1 ? parts[1].trim() : '';
   }
+
+export function extractBet(input: string): string[] {
+    // Assumes we are receiving a memo in format "bet:<manifoldMarketSlug>:<prediction>:<redemptionAddress>"
+    const [ extractedMarketSlug, prediction, redemptionAddress ] = input.split(':').slice(1).map(part => part.trim());
+    let marketSlug = extractedMarketSlug;
+    // stripping slug to everything after the last slash if there is one
+    marketSlug = marketSlug.split('/').pop() ?? marketSlug;
+    console.log('Extracted bet:', marketSlug, prediction, redemptionAddress);
+    return [marketSlug, prediction, redemptionAddress];
+    }

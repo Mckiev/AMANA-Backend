@@ -9,5 +9,6 @@ export default {
   MANIFOLD: {
     BOT_ID: '',
     maxWithdrawal: 100000n,
+    maxBet: 100000n,
   }
 }
