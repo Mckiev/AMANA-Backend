@@ -13,6 +13,7 @@ enum DepositState {
   Requested = 'Requested',
   Submitted = 'Submitted',
   Confirmed = 'Confirmed',
+  Failed = 'Failed',
 }
 
 enum WithdrawalState {
@@ -27,6 +28,7 @@ enum BetState {
   Placed = 'Placed',
   Redeeming = 'Redeeming',
   Redeemed = 'Redeemed',
+  Failed = 'Failed',
 }
 
 type Deposit = {

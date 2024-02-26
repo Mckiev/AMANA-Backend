@@ -132,8 +132,18 @@ const convertTransaction = (tx: TransactionHistoryEntry): RailgunTransaction | u
         return undefined;
     }
     const tokenAddress = tx.receiveTokenAmounts[0]?.tokenData.tokenAddress ?? '';
-    const amount = tx.receiveTokenAmounts[0]?.amount ?? 0n;
-    const memo = tx.receiveTokenAmounts[0]?.memoText ?? '';
+    const amanaAmounts = tx.receiveTokenAmounts.filter(amount => (
+        amount.tokenData.tokenAddress === constants.TOKENS.AMANA
+    ));
+    const memo = typeof amanaAmounts[0]?.memoText === 'string'
+        ? amanaAmounts[0]?.memoText
+        : '';
+    const amount = amanaAmounts.reduce(
+        (sum, amanaAmount) => (
+            sum + amanaAmount.amount
+        ),
+        0n,
+    );
     const recipientAddress = getWallet().getAddress();
     const timestamp = BigInt(Math.floor(tx.timestamp * 1000));
     return {
@@ -215,7 +225,7 @@ export function isTransactionWithdrawal(tx: RailgunTransaction): boolean {
 }
 
 export function isTransactionBet(tx: RailgunTransaction): boolean {
-    return tx.memo.toLowerCase().includes('bet:')
+    return tx.memo.toLowerCase().startsWith('bet::')
         && tx.recipientAddress.toLowerCase() === getWallet().getAddress().toLowerCase()
         && tx.tokenAddress.toLocaleLowerCase() === constants.TOKENS.AMANA.toLowerCase()
         && tx.amount > 0n;
@@ -228,11 +238,11 @@ export function extractUsernameWithTrim(input: string): string {
   }
 
 export function extractBet(input: string): string[] {
-    // Assumes we are receiving a memo in format "bet:<manifoldMarketSlug>:<prediction>:<redemptionAddress>"
-    const [ extractedMarketSlug, prediction, redemptionAddress ] = input.split(':').slice(1).map(part => part.trim());
+    // Assumes we are receiving a memo in format "bet::<manifoldMarketSlug>::<prediction>::<redemptionAddress>"
+    const [ extractedMarketSlug, prediction, redemptionAddress ] = input.split('::').slice(1).map(part => part.trim());
     let marketSlug = extractedMarketSlug;
     // stripping slug to everything after the last slash if there is one
     marketSlug = marketSlug.split('/').pop() ?? marketSlug;
     console.log('Extracted bet:', marketSlug, prediction, redemptionAddress);
     return [marketSlug, prediction, redemptionAddress];
-    }
+}
