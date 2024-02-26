@@ -81,7 +81,7 @@ const initialize = async () => {
   console.log('creating failed transactions table');
   await connection.query(`
     CREATE TABLE IF NOT EXISTS FailedTransactions (
-      txid TEXT PRIMARY KEY,
+      txid TEXT PRIMARY KEY
     );
   `);
 };
