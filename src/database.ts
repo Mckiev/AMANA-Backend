@@ -298,18 +298,13 @@ const getQueuedBet = async (): Promise<Bet | undefined> => {
   const parameters = [BetState.Placing];
   const results = await connection.query(query, parameters);
   const row: unknown = results.rows[0];
-  console.log('row', row);
   if (row === undefined) {
     return undefined;
   }
   if (!isBetRow(row)) {
-    console.log('is not bet row');
     throw new Error('Expected the row to be a BetRow');
   }
-  console.log('converting');
-  const converted = convertToBet(row);
-  console.log('converted');
-  return converted;
+  return convertToBet(row);
 }
 
 const updateBetToPlaced = async (id: string, betId: string, nShares: number): Promise<void> => {

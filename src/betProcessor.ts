@@ -4,9 +4,7 @@ import constants from './constants';
 
 
 const processBets = async (): Promise<void> => {
-  console.log('checking for bet to process');
   const bet = await database.getQueuedBet();
-  console.log('bet to process', bet);
   if (bet === undefined) {
     return;
   }
