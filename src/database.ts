@@ -78,6 +78,12 @@ const initialize = async () => {
       state TEXT
     );
   `);
+  console.log('creating failed transactions table');
+  await connection.query(`
+    CREATE TABLE IF NOT EXISTS FailedTransactions (
+      txid TEXT PRIMARY KEY,
+    );
+  `);
 };
 
 
@@ -315,6 +321,12 @@ const updateBetToFailed = async (id: string): Promise<void> => {
   await connection.query(query, parameters);
 };
 
+const addFailedTransaction = async (txid: string): Promise<void> => {
+  const query = 'INSERT INTO FailedTransactions (txid) VALUES ($1) ON CONFLICT DO NOTHING';
+  const parameters = [txid];
+  await connection.query(query, parameters);
+}
+
 export default {
   initialize,
   createDepositIfNotExists,
@@ -331,4 +343,5 @@ export default {
   getQueuedBet,
   updateBetToPlaced,
   updateBetToFailed,
+  addFailedTransaction,
 };

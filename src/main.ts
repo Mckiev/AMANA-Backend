@@ -19,13 +19,18 @@ const handleManifoldTransfer: ManifoldTransactionCallback = async (transfer) => 
 
 const handleRailgunTransaction = async (transaction : RailgunTransaction) => {
   // console.log('handling RAILGUN transaction', transaction);
-  if (isTransactionWithdrawal(transaction)) {
-    // console.log('handling withdrawal');
-    await handleWithdrawal(transaction);
-  }
-  if (isTransactionBet(transaction)) {
-    // console.log('handling bet');
-    await handleBet(transaction);
+  try {
+    if (isTransactionWithdrawal(transaction)) {
+      // console.log('handling withdrawal');
+      await handleWithdrawal(transaction);
+    }
+    if (isTransactionBet(transaction)) {
+      // console.log('handling bet');
+      await handleBet(transaction);
+    }
+  } catch (e) {
+    console.error('Failed to handle transaction', transaction.txid);
+    await database.addFailedTransaction(transaction.txid);
   }
 
   // TODO handle bets and closes
