@@ -111,6 +111,13 @@ const updateDepositToConfirmed = async (id: string): Promise<void> => {
   await connection.query(query, parameters);
 };
 
+const updateDepositToFailed = async (id: string): Promise<void> => {
+  const state = DepositState.Failed;
+  const query = 'UPDATE Deposits SET state=$1 WHERE id=$2';
+  const parameters = [state, id];
+  await connection.query(query, parameters);
+};
+
 const convertToDeposit = (value: StringObject): Deposit => {
   const state = value.state;
   if (!isDepositState(state)) {
@@ -299,14 +306,21 @@ const updateBetToPlaced = async (id: string, betId: string, nShares: number): Pr
   const query = 'UPDATE Bets SET state=$1, betId=$2, nShares=$3 WHERE id=$4';
   const parameters = [state, betId, nShares, id];
   await connection.query(query, parameters);
-}
+};
 
+const updateBetToFailed = async (id: string): Promise<void> => {
+  const state = BetState.Failed;
+  const query = 'UPDATE Bets SET state=$1 WHERE id=$2';
+  const parameters = [state, id];
+  await connection.query(query, parameters);
+};
 
 export default {
   initialize,
   createDepositIfNotExists,
   updateDepositToSubmitted,
   updateDepositToConfirmed,
+  updateDepositToFailed,
   getQueuedDeposit,
   getQueuedWithdrawal,
   createWithdrawal,
@@ -316,4 +330,5 @@ export default {
   createBet,
   getQueuedBet,
   updateBetToPlaced,
+  updateBetToFailed,
 };

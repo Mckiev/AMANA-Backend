@@ -5,3 +5,4 @@ junk.ts
 dist
 engine.db
 .Artifacts
+.DS_Store
