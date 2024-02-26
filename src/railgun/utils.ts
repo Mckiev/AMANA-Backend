@@ -132,8 +132,18 @@ const convertTransaction = (tx: TransactionHistoryEntry): RailgunTransaction | u
         return undefined;
     }
     const tokenAddress = tx.receiveTokenAmounts[0]?.tokenData.tokenAddress ?? '';
-    const amount = tx.receiveTokenAmounts[0]?.amount ?? 0n;
-    const memo = tx.receiveTokenAmounts[0]?.memoText ?? '';
+    const amanaAmounts = tx.receiveTokenAmounts.filter(amount => (
+        amount.tokenData.tokenAddress === constants.TOKENS.AMANA
+    ));
+    const memo = typeof amanaAmounts[0]?.memoText === 'string'
+        ? amanaAmounts[0]?.memoText
+        : '';
+    const amount = amanaAmounts.reduce(
+        (sum, amanaAmount) => (
+            sum + amanaAmount.amount
+        ),
+        0n,
+    );
     const recipientAddress = getWallet().getAddress();
     const timestamp = BigInt(Math.floor(tx.timestamp * 1000));
     return {
