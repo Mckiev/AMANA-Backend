@@ -6,6 +6,7 @@ import constants from './constants';
 const processBets = async (): Promise<void> => {
   const bet = await database.getQueuedBet();
   if (bet === undefined) {
+    setTimeout(processBets, 1000);
     return;
   }
   try {
