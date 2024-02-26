@@ -255,8 +255,10 @@ const onTransfer = (callback: ManifoldTransactionCallback): void => {
 }
 
 // Fetches market ID by it's slug
- async function getMarketID(market_slug: string): Promise<string> {
-  const marketDataResponse = await fetch(`https://api.manifold.markets/v0/slug/${market_slug}`, {
+ async function getMarketID(marketUrl: string): Promise<string> {
+  // stripping slug to everything after the last slash if there is one
+  const marketSlug = marketUrl.split('/').pop();
+  const marketDataResponse = await fetch(`https://api.manifold.markets/v0/slug/${marketSlug}`, {
       method: 'GET',
       headers: {
         'Authorization': `Key ${config.apiKey}`,
@@ -266,7 +268,7 @@ const onTransfer = (callback: ManifoldTransactionCallback): void => {
   
     if (!marketDataResponse.ok) {
       //TODO handle this better
-      console.log('MarketSlug is: ', market_slug);
+      console.log('MarketSlug is: ', marketSlug);
       throw new Error(`Error fetching market ID: ${marketDataResponse.status}`);
     }
 

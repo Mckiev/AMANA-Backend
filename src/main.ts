@@ -37,7 +37,7 @@ const handleRailgunTransaction = async (transaction : RailgunTransaction) => {
 }
 
 const handleBet = async (transaction : RailgunTransaction) => {
-  const [marketURL, prediction, redemptionAddress]  = extractBet(transaction.memo);
+  const [marketURL, prediction, redemptionAddress] = extractBet(transaction.memo);
   const manifoldMarketId = await Manifold.getMarketID(marketURL);
   await database.createBet(transaction.txid, transaction.timestamp, transaction.amount,  marketURL, manifoldMarketId, prediction, redemptionAddress);
 }
