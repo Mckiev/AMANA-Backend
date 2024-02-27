@@ -10,6 +10,7 @@ export {sendTransfer} from './self-transfer';
 export const {chain} = NETWORK_CONFIG[NetworkName.Polygon];
 import config from '../config';
 import { TXIDVersion, AbstractWallet } from '@railgun-community/engine';
+import { fetchNewTransactions, handleRailgunTransaction } from './utils';
 
 let wallet: AbstractWallet | undefined = undefined;
 
@@ -32,6 +33,11 @@ export const initialize = async () => {
     await wallet.getTokenBalances(TXIDVersion.V2_PoseidonMerkle, chain, false); // onlySpendable
 
     await refreshBalances(chain, undefined);
-    console.log('Engine initialized and wallet created');
+    console.log('Ballances refreshed.');
+    console.log('Processing existing Railgun transactions...');
+    const allTransactions = await fetchNewTransactions();
+    allTransactions.forEach(transaction => {
+            handleRailgunTransaction(transaction);
+    });
     return wallet;
 }

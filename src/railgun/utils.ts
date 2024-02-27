@@ -4,6 +4,9 @@ import { Chain } from '@railgun-community/shared-models';
 import { validateRailgunAddress, setOnBalanceUpdateCallback } from '@railgun-community/wallet';
 import constants from '../constants';
 import {chain, getWallet} from './railgun';
+import Manifold, { ManifoldTransactionCallback } from "../manifold";
+import database from '../database';
+import * as Railgun from './railgun';
 
 type RailgunTransactionCallback = (tx: RailgunTransaction) => void;
 
@@ -243,3 +246,45 @@ export function extractBet(input: string): string[] {
     console.log('Extracted bet:', marketUrl, prediction, redemptionAddress);
     return [marketUrl, prediction, redemptionAddress];
 }
+
+
+export const handleManifoldTransfer: ManifoldTransactionCallback = async (transfer) => {
+    // console.log('handling a transfer', transfer);
+    const zkAddress = Railgun.extractZKaddress(transfer.memo);
+    if (zkAddress) {
+      await database.createDepositIfNotExists(zkAddress, transfer.id, transfer.from, transfer.amount);
+    }
+  };
+  
+export const handleRailgunTransaction = async (transaction : RailgunTransaction) => {
+    // console.log('handling RAILGUN transaction', transaction);
+    try {
+      if (isTransactionWithdrawal(transaction)) {
+        // console.log('handling withdrawal');
+        await handleWithdrawal(transaction);
+      }
+      if (isTransactionBet(transaction)) {
+        // console.log('handling bet');
+        await handleBet(transaction);
+      }
+    } catch (e) {
+      console.error('Failed to handle transaction', transaction.txid);
+      await database.addFailedTransaction(transaction.txid);
+    }
+  
+    // TODO handle bets and closes
+  }
+  
+  const handleBet = async (transaction : RailgunTransaction) => {
+    const [marketURL, prediction, redemptionAddress] = extractBet(transaction.memo);
+    const manifoldMarketId = await Manifold.getMarketID(marketURL);
+    await database.createBet(transaction.txid, transaction.timestamp, transaction.amount,  marketURL, manifoldMarketId, prediction, redemptionAddress);
+  }
+    
+  
+  const handleWithdrawal = async (transaction : RailgunTransaction) => {
+    const manifoldUsername = extractUsernameWithTrim(transaction.memo);
+    const manifoldUsedId = await Manifold.getUserID(manifoldUsername);
+    //TODO: handle if username not found
+    await database.createWithdrawal(transaction.txid, transaction.timestamp, manifoldUsedId, manifoldUsername, transaction.amount);
+  }

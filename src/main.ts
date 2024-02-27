@@ -1,54 +1,15 @@
 import * as Railgun from './railgun/railgun';
-import { RailgunTransaction, isTransactionWithdrawal, isTransactionBet, extractUsernameWithTrim, extractBet} from './railgun/utils';
 
-import Manifold, { ManifoldTransactionCallback } from "./manifold";
+import Manifold from "./manifold";
 import database from './database';
 import depositProcessor from './depositProcessor';
 import withdrawalProcessor from './withdrawalProcessor';
 import betProcessor from './betProcessor';
+import { handleManifoldTransfer, handleRailgunTransaction } from './railgun/utils';
 // import config from './config';
 // import wait from './utils/wait';
 
-const handleManifoldTransfer: ManifoldTransactionCallback = async (transfer) => {
-  // console.log('handling a transfer', transfer);
-  const zkAddress = Railgun.extractZKaddress(transfer.memo);
-  if (zkAddress) {
-    await database.createDepositIfNotExists(zkAddress, transfer.id, transfer.from, transfer.amount);
-  }
-};
 
-const handleRailgunTransaction = async (transaction : RailgunTransaction) => {
-  // console.log('handling RAILGUN transaction', transaction);
-  try {
-    if (isTransactionWithdrawal(transaction)) {
-      // console.log('handling withdrawal');
-      await handleWithdrawal(transaction);
-    }
-    if (isTransactionBet(transaction)) {
-      // console.log('handling bet');
-      await handleBet(transaction);
-    }
-  } catch (e) {
-    console.error('Failed to handle transaction', transaction.txid);
-    await database.addFailedTransaction(transaction.txid);
-  }
-
-  // TODO handle bets and closes
-}
-
-const handleBet = async (transaction : RailgunTransaction) => {
-  const [marketURL, prediction, redemptionAddress] = extractBet(transaction.memo);
-  const manifoldMarketId = await Manifold.getMarketID(marketURL);
-  await database.createBet(transaction.txid, transaction.timestamp, transaction.amount,  marketURL, manifoldMarketId, prediction, redemptionAddress);
-}
-  
-
-const handleWithdrawal = async (transaction : RailgunTransaction) => {
-  const manifoldUsername = extractUsernameWithTrim(transaction.memo);
-  const manifoldUsedId = await Manifold.getUserID(manifoldUsername);
-  //TODO: handle if username not found
-  await database.createWithdrawal(transaction.txid, transaction.timestamp, manifoldUsedId, manifoldUsername, transaction.amount);
-}
 
 const main = async() => {
   await Railgun.initialize();
