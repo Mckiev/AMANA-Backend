@@ -5,6 +5,12 @@ on: [pull_request]
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      MANIFOLD_BOT_API_KEY: ${{ secrets.MANIFOLD_BOT_API_KEY }}
+      MANIFOLD_MCKIEV_API_KEY: ${{ secrets.MANIFOLD_MCKIEV_API_KEY }}
+      TEST_MNEMONIC: ${{ secrets.TEST_MNEMONIC }}
+      TEST_USER_MNEMONIC: ${{ secrets.TEST_USER_MNEMONIC }}
+      POLYGON_INFURA_API: ${{ secrets.POLYGON_INFURA_API }}
 
     steps:
     - uses: actions/checkout@v3
