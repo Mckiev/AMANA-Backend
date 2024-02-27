@@ -4,7 +4,7 @@ import {POIList} from '@railgun-community/engine';
 import { groth16 } from 'snarkjs';
 import Level from 'leveldown';
 import { createArtifactStore } from './create-artifact-store';
-import { config } from 'dotenv';
+import config  from '../config';
 
 export type Optional<T> = T | null | undefined;
 
@@ -96,7 +96,7 @@ export const loadEngineProvider = async () => {
       "providers": [
         // The following are example providers. Use your preferred providers here.
         {
-          "provider": config.POLYGON_INFURA_API,
+          "provider": config.polygonApiKey,
           "priority": 1,
           "weight": 1
         },
