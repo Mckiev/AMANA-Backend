@@ -8,6 +8,7 @@ const processBets = async (): Promise<void> => {
   const bet = await database.getQueuedBet();
   console.log('bet to process', bet);
   if (bet === undefined) {
+    setTimeout(processBets, 1000);
     return;
   }
   try {
