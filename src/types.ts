@@ -123,7 +123,7 @@ const isBetRow = (value: unknown) : value is BetRow => (
     )
     &&  (
       value.nshares === null
-      || typeof value.nshares === 'string'
+      || typeof value.nshares === 'number'
     )
     && typeof value.state === 'string'
 );

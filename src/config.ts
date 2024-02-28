@@ -20,6 +20,12 @@ if (userMnemonic === undefined) {
 const apiKey = process.env.MANIFOLD_BOT_API_KEY ?? '';
 const mckievAPIKey = process.env.MANIFOLD_MCKIEV_API_KEY ?? '';
 
+const polygonRpc = process.env.POLYGON_RPC;
+
+if (polygonRpc === undefined) {
+  throw new Error('An environment variable for the POLYGON_RPC was not provided.');
+}
+
 const feeToken = constants.TOKENS.WMATIC;
 
 export default {
@@ -29,4 +35,5 @@ export default {
   apiKey,
   mckievAPIKey,
   feeToken,
+  polygonRpc,
 };

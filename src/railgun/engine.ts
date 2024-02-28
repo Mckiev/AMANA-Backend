@@ -4,6 +4,7 @@ import {POIList} from '@railgun-community/engine';
 import { groth16 } from 'snarkjs';
 import Level from 'leveldown';
 import { createArtifactStore } from './create-artifact-store';
+import config from '../config';
 
 export type Optional<T> = T | null | undefined;
 
@@ -95,13 +96,13 @@ export const loadEngineProvider = async () => {
       "providers": [
         // The following are example providers. Use your preferred providers here.
         {
-          "provider": "https://1rpc.io/matic",
-          "priority": 2,
+          "provider": config.polygonRpc,
+          "priority": 1,
           "weight": 1
         },
         {
-          "provider": "https://polygon-bor.publicnode.com",
-          "priority": 1,
+          "provider": "https://polygon.drpc.org/",
+          "priority": 2,
           "weight": 1
         },
       ]

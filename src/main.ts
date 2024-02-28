@@ -18,7 +18,7 @@ const handleManifoldTransfer: ManifoldTransactionCallback = async (transfer) => 
 };
 
 const handleRailgunTransaction = async (transaction : RailgunTransaction) => {
-  // console.log('handling RAILGUN transaction', transaction);
+  console.log('handling RAILGUN transaction', transaction);
   try {
     if (isTransactionWithdrawal(transaction)) {
       // console.log('handling withdrawal');
