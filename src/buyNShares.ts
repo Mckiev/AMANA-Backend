@@ -305,24 +305,67 @@ const getMarketProb = async (marketId: string): Promise<number> => {
     return json.probability;
 }
 
+const sellShares = async (marketId: string, prediction: ShareType, shares_amount: number): Promise<[string, number]> => {
+  const url = `https://api.manifold.markets/v0/market/${marketId}/sell`;
+  const headers = {
+    'Authorization': `Key ${config.apiKey}`,
+    'Content-Type': 'application/json'
+  };
+  const response = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      outcome: prediction,
+      shares: shares_amount
+    })
+  });
+
+  const json: BetResponseJson = await response.json();
+
+  if (!isBetResponseJson(json)) {
+    console.log('json is: ', json);
+    throw new Error('Unexpected response type returned from Manifold API');
+  }
+
+  if (!json.isFilled) {
+    throw new Error('Failed to sell shares');
+  }
+  const sold_shares = Math.round(Number.parseFloat(json.shares));
+  console.log(`sold shares: ${sold_shares}`);
+  return [json.betId,  sold_shares];  
+}
+
+
+
+
+
+
 const buyNShares = async (marketId: string, prediction: ShareType, shares_amount: number): Promise<void> => {
     let shares_bought = 0;
-    while (shares_bought < shares_amount-10) {
-        let prob = await getMarketProb(marketId);
-        const mana_amount = Math.ceil((shares_amount - shares_bought) * (prediction === ShareType.yes ? prob : 1 - prob));
-        
+    let mana_amount = 0;
+    let prob = 0.5;
+    while (shares_bought < shares_amount) {
+        prob = await getMarketProb(marketId);
+        mana_amount = Math.floor((shares_amount - shares_bought) * (prediction === ShareType.yes ? prob : 1 - prob));
+        mana_amount = Math.max(mana_amount, 10);
         console.log(`prob = ${prob}, Buying for ${mana_amount} mana`);
-        const [betId, shares] = await buyShares(marketId, prediction, mana_amount);
+        const shares = (await buyShares(marketId, prediction, mana_amount))[1];
         console.log(`Bought ${shares} shares, total bought: ${shares_bought}`);
         shares_bought += shares;
     }
+
     console.log('Bought this many shares:', shares_bought);
-    
+    console.log('selling extra shares');
+    const extra_shares = shares_bought - shares_amount;
+    const sold_shares = (await sellShares(marketId, prediction, extra_shares))[1];
+    shares_bought += sold_shares;
+    console.log(`total shares bought: ${shares_bought}`);
 }
 
+
 const main = async () => {
-    const marketId = await getMarketID('test-question-4c1ff3f827cb');
-    buyNShares(marketId, ShareType.yes, 200);
+    const marketId = await getMarketID('will-vivek-ramaswamy-be-the-republi');
+    buyNShares(marketId, ShareType.no, 300);
 }
 
 timeFunctionExecution(main).then((executionTime) => {
