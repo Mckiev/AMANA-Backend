@@ -243,6 +243,9 @@ export function extractUsernameWithTrim(input: string): string {
 export function extractBet(input: string): string[] {
     // Assumes we are receiving a memo in format "bet::<manifoldMarketSlug>::<prediction>::<redemptionAddress>"
     const [ marketUrl, prediction, redemptionAddress ] = input.split('::').slice(1).map(part => part.trim());
+    if (!['YES', 'NO'].includes(prediction)) {
+        throw new Error('Invalid prediction');
+    }
     console.log('Extracted bet:', marketUrl, prediction, redemptionAddress);
     return [marketUrl, prediction, redemptionAddress];
 }
