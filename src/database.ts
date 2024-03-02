@@ -78,6 +78,17 @@ const initialize = async () => {
       state TEXT
     );
   `);
+  await connection.query(`
+    CREATE TABLE IF NOT EXISTS RedemptionTransactions (
+      id VARCHAR(64) PRIMARY KEY,
+      internalBetId VARCHAR(64),
+      betId TEXT,
+      amount BIGINT,
+      marketId TEXT,
+      prediction TEXT,
+      nShares INTEGER
+    )
+  `);
   console.log('creating failed transactions table');
   await connection.query(`
     CREATE TABLE IF NOT EXISTS FailedTransactions (
@@ -332,6 +343,20 @@ const addFailedTransaction = async (txid: string): Promise<void> => {
   await connection.query(query, parameters);
 }
 
+const createRedemptionTransaction = async (
+  internalBetId: string,
+  betId: string,
+  amount: bigint,
+  marketId: string,
+  prediction: string,
+  nShares: number,
+): Promise<void> => {
+  const id = generateId();
+  const query = 'INSERT INTO RedemptionTransactions (id, internalBetId, betId, amount, marketId, prediction, nShares) VALUES ($1, $2, $3, $4, $5, $6, $7)';
+  const parameters = [id, internalBetId, betId, amount, marketId, prediction, nShares];
+  await connection.query(query, parameters);
+};
+
 export default {
   initialize,
   createDepositIfNotExists,
@@ -349,4 +374,5 @@ export default {
   updateBetToPlaced,
   updateBetToFailed,
   addFailedTransaction,
+  createRedemptionTransaction,
 };

@@ -335,7 +335,7 @@ const onTransfer = (callback: ManifoldTransactionCallback): void => {
 
     try {
         // response is an array of positions, but we can only have zero or one position since we filter by  both user and market
-        const positionData = await (await positionResponse.json())[0];
+        const positionData = (await positionResponse.json())[0];
 
 
         if (!isPositionData(positionData)) {
@@ -371,6 +371,25 @@ const getMarketProb = async (marketId: string): Promise<number> => {
   return json.probability;
 }
 
+// 1. Buy yes/no with MANA
+//   -> Buy yes/no => sell no/yes, if we have them
+// 2. Sell yes/no by share quantity if we have them
+
+
+// Desired:
+// Buy yes with MANA (bet) <-- easy, use (1)
+// Buy no with MANA (bet) <-- easy, use (1)
+
+
+// Buy yes by share quantity (redeem) <-- NOT easy
+// Buy no by share quantity (redeem) <-- NOT easy
+
+
+// 
+
+
+// Note: Need to test what response we get from the API when, e.g.
+// We own 80 no shares, and buy 100 yes shares
 
 const sellShares = async (marketId: string, prediction: ShareType, shares_amount: number): Promise<[string, number]> => {
   const url = `https://api.manifold.markets/v0/market/${marketId}/sell`;
@@ -403,7 +422,8 @@ const sellShares = async (marketId: string, prediction: ShareType, shares_amount
 }
 
 const buyNShares = async (marketId: string, prediction: ShareType, shares_amount: number): Promise<number> => {
-  let shares_bought = 0; 
+  // TODO: determine type of shares we have, to make sure we don't have shares of opposite type (yes/no)
+  let shares_bought = 0;
   let prob = 0.5;
   let total_mana_spent = 0;
   let mana_order_amount = 0;
@@ -428,6 +448,15 @@ const buyNShares = async (marketId: string, prediction: ShareType, shares_amount
   return total_mana_spent;
 }
 
+// 2 users: Alice, Bob
+// Alice buys 100 Yes shares
+// Bob buys 50 No shares
+// We now have 50 Yes shares
+// Alice requests to redeem 100 Yes shares
+//   -> We sell the 50 Yes shares
+//     -> Proceeds go to Alice
+//   -> We buy 50 No shares
+//     -> (1 - price) * 50 shares goes to Alice
 
 // sells given number of shares, handling the case when we don't have enough shares
 const closePosition = async (marketId: string, prediction: ShareType, amount: number): Promise<void> => {
@@ -452,6 +481,7 @@ const closePosition = async (marketId: string, prediction: ShareType, amount: nu
   if (extra_shares > 0) {
     const position_to_buy = (prediction == ShareType.no) ? ShareType.yes : ShareType.no;
     const mana_spent = await buyNShares(marketId, position_to_buy, extra_shares);
+    // mana_received += (1 - "No price") * numberOfShares
     mana_received += (extra_shares - mana_spent);
   }
   console.log(`closed position, received ${mana_received} mana`);
