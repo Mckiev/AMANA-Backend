@@ -239,39 +239,6 @@ const onTransfer = (callback: ManifoldTransactionCallback): void => {
   }
 
   
- async function buyShares(marketID: string, yes_or_no: ShareType, amount: number, from_api_key: string = config.apiKey): Promise<[string, number]> {
-  const buySharesResponse = await fetch(`https://api.manifold.markets/v0/bet`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Key ${from_api_key}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      contractId: marketID,
-      outcome: yes_or_no,
-      amount: amount,
-    })
-  });
-
-  if (!buySharesResponse.ok) {
-    // Log or capture the error response body
-    const errorBody = await buySharesResponse.json();
-    console.error('Error response body:', errorBody);
-    throw new Error(`Error buying shares: ${buySharesResponse.status} - ${errorBody.message}`);
-  }
-
-  const json: BetResponseJson = await buySharesResponse.json();
-
-  if (!isBetResponseJson(json)) {
-    console.log('json is: ', json);
-    throw new Error('Unexpected response type returned from Manifold API');
-  }
-
-  if (!json.isFilled) {
-    throw new Error('Failed to buy shares');
-  }
-  return [json.betId, parseInt(json.shares)];
-}
 
 // Fetches market ID by it's slug
  async function getMarketID(marketUrl: string): Promise<string> {
@@ -320,43 +287,6 @@ const onTransfer = (callback: ManifoldTransactionCallback): void => {
     return userData.username;
   };
 
-  const getMarketPosition = async (marketID: string, userID: string): Promise<[ShareType, number] | undefined>  => {
-    const positionResponse = await fetch(`https://api.manifold.markets/v0/market/${marketID}/positions?userId=${userID}`, {
-        method: 'GET',
-        headers: {
-        'Authorization': `Key ${config.apiKey}`,
-        'Content-Type': 'application/json'
-        }
-    });
-
-    if (!positionResponse.ok) {
-        throw new Error(`Error fetching market position: ${positionResponse.status}`);
-    }
-
-    try {
-        // response is an array of positions, but we can only have zero or one position since we filter by  both user and market
-        const positionData = (await positionResponse.json())[0];
-
-
-        if (!isPositionData(positionData)) {
-        console.log('positionData is: ', positionData);
-        throw new Error('Unexpected market position data type returned from Manifold API');
-        }
-
-        if (positionData.hasNoShares) {
-        return [ShareType.no, positionData.totalShares.NO];
-        }
-        if (positionData.hasYesShares) {
-        return [ShareType.yes, positionData.totalShares.YES];
-        }
-    } catch (e) {
-        console.log('Error fetching market position:', e);
-}
-
-return undefined;
-
-}
-
 const getMarketProb = async (marketId: string): Promise<number> => {
   const url = `https://api.manifold.markets/v0/market/${marketId}`;  
   const headers = {  
@@ -369,6 +299,35 @@ const getMarketProb = async (marketId: string): Promise<number> => {
       throw new Error('Unexpected Manifold API response for "market"');
   }  
   return json.probability;
+}
+
+const getMarketPosition = async (marketId: string, userId: string): Promise<[ShareType, number] | undefined> => {
+  const url = `https://api.manifold.markets/v0/bets?contractId=${marketId}&userId=${userId}`;
+  const headers = {
+    'Authorization': `Key ${config.apiKey}`,
+    'Content-Type': 'application/json'
+  };
+  return fetch(url, { headers })
+    .then(response => response.json())
+    .then(json => {
+      if (!Array.isArray(json)) {
+        throw new Error('Unexpected response type returned from Manifold API');
+      }
+      // console.log('json is: ', json);
+      const yesBets = json.filter((bet: any) => bet.outcome === 'YES');
+      const noBets = json.filter((bet: any) => bet.outcome === 'NO');
+      const yesShares = yesBets.reduce((total: number, bet: any) => total + bet.shares, 0);
+      const noShares = noBets.reduce((total: number, bet: any) => total + bet.shares, 0);
+      console.log('yesShares: ', yesShares);
+      console.log('noShares: ', noShares);
+      if (yesShares > noShares) {
+        return [ShareType.yes, yesShares];
+      }
+      if (noShares > yesShares) {
+        return [ShareType.no, noShares];
+      }
+      return undefined;
+    });
 }
 
 // 1. Buy yes/no with MANA
@@ -387,9 +346,42 @@ const getMarketProb = async (marketId: string): Promise<number> => {
 
 // 
 
-
 // Note: Need to test what response we get from the API when, e.g.
 // We own 80 no shares, and buy 100 yes shares
+async function buyShares(marketID: string, yes_or_no: ShareType, amount: number, from_api_key: string = config.apiKey): Promise<[string, number]> {
+  const buySharesResponse = await fetch(`https://api.manifold.markets/v0/bet`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Key ${from_api_key}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      contractId: marketID,
+      outcome: yes_or_no,
+      amount: amount,
+    })
+  });
+
+  if (!buySharesResponse.ok) {
+    // Log or capture the error response body
+    const errorBody = await buySharesResponse.json();
+    console.error('Error response body:', errorBody);
+    throw new Error(`Error buying shares: ${buySharesResponse.status} - ${errorBody.message}`);
+  }
+
+  const json: BetResponseJson = await buySharesResponse.json();
+
+  if (!isBetResponseJson(json)) {
+    console.log('json is: ', json);
+    throw new Error('Unexpected response type returned from Manifold API');
+  }
+
+  if (!json.isFilled) {
+    throw new Error('Failed to buy shares');
+  }
+  console.log('json is: ', json);
+  return [json.betId, parseInt(json.shares)];
+}
 
 const sellShares = async (marketId: string, prediction: ShareType, shares_amount: number): Promise<[string, number]> => {
   const url = `https://api.manifold.markets/v0/market/${marketId}/sell`;
@@ -416,6 +408,7 @@ const sellShares = async (marketId: string, prediction: ShareType, shares_amount
   if (!json.isFilled) {
     throw new Error('Failed to sell shares');
   }
+  console.log('json is: ', json);
   const mana_amount = Math.round(json.amount);
   console.log(`sold shares: ${shares_amount} for ${mana_amount} mana`);
   return [json.betId,  mana_amount];  

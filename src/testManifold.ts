@@ -2,7 +2,8 @@ import { assert } from 'console';
 import config from './config';
 import { isObjectRecord } from './types';
 import wait from './utils/wait';
-import Manifold from "./manifold";
+import Manifold, { ShareType } from "./manifold";
+import manifold from './manifold';
 
 // export type ManifoldTransfer = {
 //   id: string;
@@ -339,7 +340,20 @@ async function timeFunctionExecution(func: () => Promise<void>): Promise<number>
 
 const main = async () => {
     const marketId = await Manifold.getMarketID('will-vivek-ramaswamy-be-the-republi');
-    await Manifold.closePosition(marketId, Manifold.ShareType.no, 100);
+    const my_id = await Manifold.fetchMyId();
+    let position = await Manifold.getMarketPosition(marketId, my_id);
+    console.log('position is: ', position);
+    // await Manifold.buyShares(marketId, Manifold.ShareType.yes, 100);
+    // position = await Manifold.getMarketPosition(marketId, my_id);
+    // console.log('position after is: ', position);
+    await Manifold.buyShares(marketId, Manifold.ShareType.no, 40);
+    position = await Manifold.getMarketPosition(marketId, my_id);
+    console.log('position after is: ', position);
+
+    // await Manifold.closePosition(marketId, Manifold.ShareType.no, 40);
+    // const position1 = await Manifold.getMarketPosition(marketId, await manifold.fetchMyId());
+    // console.log('position after is: ', position1);
+    
 }
 
 timeFunctionExecution(main).then((executionTime) => {
