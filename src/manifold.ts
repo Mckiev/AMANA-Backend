@@ -18,6 +18,15 @@ type ManifoldTransactionJSON = {
   };
 };
 
+
+type Bet = {
+  betId: string,
+  marketId:string,
+  prediction:ShareType,
+  n_shares: number,
+  mana_amount: number
+}
+
 const isManifoldTransaction = (value: unknown): value is ManifoldTransactionJSON => (
   isObjectRecord(value)
     && typeof value.id === 'string'
@@ -48,24 +57,6 @@ const isMarketData = (value: unknown): value is MarketData => (
     && typeof value.id === 'string'
 );
 
-type PositionData = {
-  hasNoShares: boolean;
-  hasYesShares: boolean;
-  totalShares: {
-    NO: number;
-    YES: number;
-  };
-};
-
-const isPositionData = (value: unknown): value is PositionData => (
-  isObjectRecord(value)
-    && typeof value.hasNoShares === 'boolean'
-    && typeof value.hasYesShares === 'boolean'
-    && isObjectRecord(value.totalShares)
-    && typeof value.totalShares.NO === 'number'
-    && typeof value.totalShares.YES === 'number'
-);
-
 type ResponseJson = {
   success: boolean;
 };
@@ -73,9 +64,11 @@ type ResponseJson = {
 type BetResponseJson = ResponseJson & {
   isFilled: boolean;
   betId: string;
-  shares: string;
+  shares: number;
   amount: number;
+  outcome: ShareType;
 };
+
 
 const isResponseJson = (value: unknown): value is ResponseJson => (
   isObjectRecord(value)
@@ -302,6 +295,8 @@ const getMarketProb = async (marketId: string): Promise<number> => {
 }
 
 const getMarketPosition = async (marketId: string, userId: string): Promise<[ShareType, number] | undefined> => {
+  // It takes some time for the API to update the position after a transaction
+  // Maybe aroud 5 seconds
   const url = `https://api.manifold.markets/v0/bets?contractId=${marketId}&userId=${userId}`;
   const headers = {
     'Authorization': `Key ${config.apiKey}`,
@@ -313,13 +308,15 @@ const getMarketPosition = async (marketId: string, userId: string): Promise<[Sha
       if (!Array.isArray(json)) {
         throw new Error('Unexpected response type returned from Manifold API');
       }
-      // console.log('json is: ', json);
       const yesBets = json.filter((bet: any) => bet.outcome === 'YES');
       const noBets = json.filter((bet: any) => bet.outcome === 'NO');
       const yesShares = yesBets.reduce((total: number, bet: any) => total + bet.shares, 0);
       const noShares = noBets.reduce((total: number, bet: any) => total + bet.shares, 0);
       console.log('yesShares: ', yesShares);
       console.log('noShares: ', noShares);
+      if (Math.max(yesShares, noShares) < 1) {
+        return undefined;
+      }
       if (yesShares > noShares) {
         return [ShareType.yes, yesShares];
       }
@@ -348,7 +345,7 @@ const getMarketPosition = async (marketId: string, userId: string): Promise<[Sha
 
 // Note: Need to test what response we get from the API when, e.g.
 // We own 80 no shares, and buy 100 yes shares
-async function buyShares(marketID: string, yes_or_no: ShareType, amount: number, from_api_key: string = config.apiKey): Promise<[string, number]> {
+async function buyShares(marketId: string, yes_or_no: ShareType, amount: number, from_api_key: string = config.apiKey): Promise<Bet> {
   const buySharesResponse = await fetch(`https://api.manifold.markets/v0/bet`, {
     method: 'POST',
     headers: {
@@ -356,7 +353,7 @@ async function buyShares(marketID: string, yes_or_no: ShareType, amount: number,
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      contractId: marketID,
+      contractId: marketId,
       outcome: yes_or_no,
       amount: amount,
     })
@@ -379,11 +376,12 @@ async function buyShares(marketID: string, yes_or_no: ShareType, amount: number,
   if (!json.isFilled) {
     throw new Error('Failed to buy shares');
   }
-  console.log('json is: ', json);
-  return [json.betId, parseInt(json.shares)];
+
+  let bet: Bet = { betId: json.betId, marketId, prediction: yes_or_no, n_shares: json.shares, mana_amount: json.amount };
+  return bet;
 }
 
-const sellShares = async (marketId: string, prediction: ShareType, shares_amount: number): Promise<[string, number]> => {
+const sellShares = async (marketId: string, prediction: ShareType, shares_amount: number): Promise<Bet> => {
   const url = `https://api.manifold.markets/v0/market/${marketId}/sell`;
   const headers = {
     'Authorization': `Key ${config.apiKey}`,
@@ -408,37 +406,74 @@ const sellShares = async (marketId: string, prediction: ShareType, shares_amount
   if (!json.isFilled) {
     throw new Error('Failed to sell shares');
   }
-  console.log('json is: ', json);
+
   const mana_amount = Math.round(json.amount);
+  // mana amount is negative, because we are receiving mana, rather than spending it
   console.log(`sold shares: ${shares_amount} for ${mana_amount} mana`);
-  return [json.betId,  mana_amount];  
+  let bet: Bet = { betId: json.betId, marketId, prediction, n_shares: -shares_amount, mana_amount };
+  return bet;  
 }
 
-const buyNShares = async (marketId: string, prediction: ShareType, shares_amount: number): Promise<number> => {
-  // TODO: determine type of shares we have, to make sure we don't have shares of opposite type (yes/no)
+const sellAllShares = async (marketId: string): Promise<Bet> => {
+  const url = `https://api.manifold.markets/v0/market/${marketId}/sell`;
+  const headers = {
+    'Authorization': `Key ${config.apiKey}`,
+    'Content-Type': 'application/json'
+  };
+  const response = await fetch(url, {
+    method: 'POST',
+    headers,
+  });
+
+  const json: BetResponseJson = await response.json();
+
+  if (!isBetResponseJson(json)) {
+    console.log('json is: ', json);
+    throw new Error('Unexpected response type returned from Manifold API');
+  }
+
+  if (!json.isFilled) {
+    throw new Error('Failed to sell shares');
+  }
+  console.log('json is: ', json);
+  const mana_amount = Math.round(json.amount);
+  const shares_amount = Math.round(json.shares);
+  const shares_type = json.outcome;
+  console.log(`sold ${shares_type} shares: ${shares_amount} for ${mana_amount} mana`);
+  const bet: Bet = { betId: json.betId, marketId, prediction: shares_type, n_shares: shares_amount, mana_amount };
+  return bet; 
+}
+
+const buyNShares = async (marketId: string, prediction: ShareType, shares_amount: number): Promise<Bet[]> => {
+  // This function assumes that we don't have shares of the opposite type
+  // It will buy shares until we have more then the requested shares_amount, and then sell the extra shares
   let shares_bought = 0;
   let prob = 0.5;
-  let total_mana_spent = 0;
-  let mana_order_amount = 0;
+  let mana_amount = 0;
+  let bet_array: Bet[] = [];
+  let betId = '';
   while (shares_bought < shares_amount) {
       prob = await getMarketProb(marketId);
-      mana_order_amount = Math.floor((shares_amount - shares_bought) * (prediction === ShareType.yes ? prob : 1 - prob));
-      mana_order_amount = Math.max(mana_order_amount, 10);
-      console.log(`prob = ${prob}, Buying for ${mana_order_amount} mana`);
-      const n_shares = (await buyShares(marketId, prediction, mana_order_amount))[1];
+      mana_amount = Math.floor((shares_amount - shares_bought) * (prediction === ShareType.yes ? prob : 1 - prob));
+      mana_amount += 10; // aiming to overshoot a little
+      console.log(`prob = ${prob}, Buying ${prediction} shares for ${mana_amount} mana`);
+      const {betId, n_shares} = await buyShares(marketId, prediction, mana_amount);
+      bet_array.push({ betId, marketId, prediction, n_shares, mana_amount });
       shares_bought += n_shares;
       console.log(`Bought ${n_shares} shares, total bought: ${shares_bought}`);
-      total_mana_spent += mana_order_amount;
   }
 
   console.log('selling extra shares');
   const extra_shares = shares_bought - shares_amount;
-  mana_order_amount = (await sellShares(marketId, prediction, extra_shares))[1];
-  console.log(`Sold ${extra_shares} shares for ${mana_order_amount} mana`);
+  const sale_result = await sellShares(marketId, prediction, extra_shares);
+  betId = sale_result.betId;
+  mana_amount = sale_result.mana_amount;
+  bet_array.push({ betId, marketId, prediction, n_shares: -extra_shares, mana_amount });
+  console.log(`Sold ${extra_shares} shares for ${mana_amount} mana`);
   shares_bought -= extra_shares;
-  total_mana_spent += mana_order_amount;
+  //mana_amount is negative, because we are receiving mana, rather than spending it
   console.log(`total shares bought: ${shares_bought}`);
-  return total_mana_spent;
+  return bet_array;
 }
 
 // 2 users: Alice, Bob
@@ -452,33 +487,44 @@ const buyNShares = async (marketId: string, prediction: ShareType, shares_amount
 //     -> (1 - price) * 50 shares goes to Alice
 
 // sells given number of shares, handling the case when we don't have enough shares
-const closePosition = async (marketId: string, prediction: ShareType, amount: number): Promise<void> => {
+const closePosition = async (marketId: string, prediction: ShareType, shares_amount: number): Promise<[number, Bet[]]> => {
   let mana_received = 0; 
-  let extra_shares = 0;
+  let shares_to_buy = shares_amount;
+  let bet_array: Bet[] = [];
   const position = await getMarketPosition(marketId, await fetchMyId());
-  if (position === undefined) {
-    console.log('No position found');
-    return;
+  if (position !== undefined) {
+    const [position_prediction, shares] = position;
+    if (position_prediction == prediction) {
+        if (shares >= shares_amount) {
+          const sale_result = await sellShares(marketId, prediction, shares_amount);
+          bet_array.push(sale_result);
+          // sale_result.shares is negative, because we are selling shares
+          shares_to_buy += sale_result.n_shares;
+          // mana_amount is negative, because we are receiving mana, rather than spending it
+          mana_received -= sale_result.mana_amount;
+        } else {
+          const sale_result = await sellAllShares(marketId);
+          bet_array.push(sale_result);
+          // sale_result.shares is negative, because we are selling shares
+          shares_to_buy += sale_result.n_shares;
+          // mana_amount is negative, because we are receiving mana, rather than spending it
+          mana_received -= sale_result.mana_amount;
+        }
+    }
   }
-  const [position_prediction, shares] = position;
-  if ((position_prediction == prediction) && (shares >= amount)) {
-    mana_received = (await sellShares(marketId, prediction, amount))[1];
-  }
-  if ((position_prediction == prediction) && (shares < amount)) {
-    mana_received += (await sellShares(marketId, prediction, shares))[1];    
-    extra_shares = amount - shares;
-  }
-  if (position_prediction != prediction) {
-    extra_shares = amount;
-  }
-  if (extra_shares > 0) {
-    const position_to_buy = (prediction == ShareType.no) ? ShareType.yes : ShareType.no;
-    const mana_spent = await buyNShares(marketId, position_to_buy, extra_shares);
-    // mana_received += (1 - "No price") * numberOfShares
-    mana_received += (extra_shares - mana_spent);
+
+  if (shares_to_buy > 0) {
+    // If we have closed our manifold position, but need more shares to cover the requested amount
+    // we buy the remaining shares
+    const reverse_prediction = (prediction == ShareType.no) ? ShareType.yes : ShareType.no;
+    const purchase_bet_array = await buyNShares(marketId, reverse_prediction, shares_to_buy);
+    bet_array = bet_array.concat(purchase_bet_array);
+    const mana_spent = purchase_bet_array.reduce((total, bet) => total + bet.mana_amount, 0);
+    // in effect, we have redeemed the YES+NO shares, and received shares_to_buy amount of mana
+    mana_received += (shares_to_buy - mana_spent);
   }
   console.log(`closed position, received ${mana_received} mana`);
-  return;
+  return [mana_received, bet_array];
 }
 
 export default {
@@ -494,4 +540,6 @@ export default {
   getMarketPosition,
   buyNShares,
   closePosition,
+  sellShares,
+  sellAllShares,
 }

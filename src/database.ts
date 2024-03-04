@@ -81,7 +81,7 @@ const initialize = async () => {
   await connection.query(`
     CREATE TABLE IF NOT EXISTS RedemptionTransactions (
       id VARCHAR(64) PRIMARY KEY,
-      internalBetId VARCHAR(64),
+      positionId VARCHAR(64),
       betId TEXT,
       amount BIGINT,
       marketId TEXT,
