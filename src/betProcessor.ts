@@ -16,7 +16,7 @@ const processBets = async (): Promise<void> => {
     if (bet.amount > constants.MANIFOLD.maxBet) {
       throw new Error('Bet amount exceeds maximum');
     } else {
-      const {betId, n_shares} = await Manifold.buyShares(bet.marketId, bet.prediction, Number(bet.amount));
+      const {betId, n_shares} = await Manifold.buyShares(bet.marketId, bet.prediction, parseInt(bet.amount));
       if (betId === undefined) {
         throw new Error('Failed to place bet');
       } else {
