@@ -255,7 +255,7 @@ export const handleManifoldTransfer: ManifoldTransactionCallback = async (transf
     // console.log('handling a transfer', transfer);
     const zkAddress = Railgun.extractZKaddress(transfer.memo);
     if (zkAddress) {
-      await database.createDepositIfNotExists(zkAddress, transfer.id, transfer.from, transfer.amount);
+      await database.createDeposit(zkAddress, transfer.id, transfer.from, transfer.amount);
     }
   };
   
@@ -272,7 +272,7 @@ export const handleRailgunTransaction = async (transaction : RailgunTransaction)
       }
     } catch (e) {
       console.error('Failed to handle transaction', transaction.txid);
-      await database.addFailedTransaction(transaction.txid);
+      await database.addFailedTransaction(transaction);
     }
   
     // TODO handle bets and closes

@@ -64,12 +64,12 @@ describe('sendTransfer function', () => {
 
 
 
-describe('tradeShares function', () => {
+describe('buyShares function', () => {
     it('should buy shares successfully', async () => {
         const marketID = "0kEFCvweNbvhKivYTJce";
         const yes_or_no = Manifold.ShareType.no;
         const mana_amount = 10;
-        await Manifold.tradeShares(marketID, yes_or_no, mana_amount);
+        await Manifold.buyShares(marketID, yes_or_no, mana_amount);
     });
 });
 

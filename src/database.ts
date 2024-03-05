@@ -20,6 +20,9 @@ import {
   BetRow,
   WithdrawalRow,
 } from './types';
+import { Bet as ManifoldBet } from './manifold';
+import { RailgunTransaction } from './railgun/utils';
+
 
 
 // const PG_CERT_PATH = path.join(__dirname, '../ca-certificate.crt');
@@ -78,10 +81,24 @@ const initialize = async () => {
       state TEXT
     );
   `);
+  await connection.query(`
+    CREATE TABLE IF NOT EXISTS RedemptionTransactions (
+      id VARCHAR(64) PRIMARY KEY,
+      positionId VARCHAR(64),
+      betId TEXT,
+      amount BIGINT,
+      marketId TEXT,
+      prediction TEXT,
+      nShares INTEGER
+    )
+  `);
   console.log('creating failed transactions table');
   await connection.query(`
     CREATE TABLE IF NOT EXISTS FailedTransactions (
-      txid TEXT PRIMARY KEY
+      txid TEXT PRIMARY KEY,
+      memo TEXT,
+      timestamp BIGINT,
+      amount BIGINT
     );
   `);
 };
@@ -89,7 +106,7 @@ const initialize = async () => {
 
 // deposit related functions
 
-const createDepositIfNotExists = async (
+const createDeposit = async (
   railgunAddress: string,
   manifoldTransferId: string,
   manifoldUserId: string,
@@ -298,17 +315,14 @@ const getQueuedBet = async (): Promise<Bet | undefined> => {
   const parameters = [BetState.Placing];
   const results = await connection.query(query, parameters);
   const row: unknown = results.rows[0];
-  console.log('row', row);
   if (row === undefined) {
     return undefined;
   }
   if (!isBetRow(row)) {
-    console.log('is not bet row');
+    console.log('is not bet row', row);
     throw new Error('Expected the row to be a BetRow');
   }
-  console.log('converting');
   const converted = convertToBet(row);
-  console.log('converted');
   return converted;
 }
 
@@ -326,15 +340,48 @@ const updateBetToFailed = async (id: string): Promise<void> => {
   await connection.query(query, parameters);
 };
 
-const addFailedTransaction = async (txid: string): Promise<void> => {
-  const query = 'INSERT INTO FailedTransactions (txid) VALUES ($1) ON CONFLICT DO NOTHING';
-  const parameters = [txid];
+const updateBetToRedeemed = async (id: string): Promise<void> => {
+  const state = BetState.Redeemed;
+  const query = 'UPDATE Bets SET state=$1 WHERE id=$2';
+  const parameters = [state, id];
   await connection.query(query, parameters);
 }
 
+const addFailedTransaction = async (transaction: RailgunTransaction): Promise<void> => {
+  const query = 'INSERT INTO FailedTransactions (txid, memo, timestamp, amount) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING'
+  const parameters = [transaction.txid, transaction.memo, transaction.timestamp, transaction.amount];
+  await connection.query(query, parameters);
+}
+
+const createRedemptionTransaction = async (positionId: string, bet: ManifoldBet): Promise<void> => {
+  const id = generateId();
+  const query = 'INSERT INTO RedemptionTransactions (id, positionId, betId, amount, marketId, prediction, nShares) VALUES ($1, $2, $3, $4, $5, $6, $7)';
+  const parameters = [id, positionId, bet.betId, bet.mana_amount, bet.marketId, bet.prediction, bet.n_shares];
+  await connection.query(query, parameters);
+};
+
+
+// Redemption related functions
+
+const getQueuedRedemption = async (): Promise<Bet | undefined> => {
+  const query = 'SELECT * FROM Bets WHERE state=$1 ORDER BY timestamp ASC LIMIT 1';
+  const parameters = [BetState.Redeeming];
+  const results = await connection.query(query, parameters);
+  const row: unknown = results.rows[0];
+  if (row === undefined) {
+    return undefined;
+  }
+  if (!isBetRow(row)) {
+    console.log(`row is not bet row: ${row}`);
+    throw new Error('Expected the row to be a BetRow');
+  }
+  return convertToBet(row);
+}
+
+
 export default {
   initialize,
-  createDepositIfNotExists,
+  createDeposit,
   updateDepositToSubmitted,
   updateDepositToConfirmed,
   updateDepositToFailed,
@@ -348,5 +395,8 @@ export default {
   getQueuedBet,
   updateBetToPlaced,
   updateBetToFailed,
+  updateBetToRedeemed,
   addFailedTransaction,
+  createRedemptionTransaction,
+  getQueuedRedemption,
 };
