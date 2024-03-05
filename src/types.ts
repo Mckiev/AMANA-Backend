@@ -67,15 +67,25 @@ type Bet = {
   state: BetState;
 };
 
+type Redemtion = {
+  // positionId corresponds to the id in Bets table
+  positionId: string;
+  betId: string;
+  amount: bigint;
+  marketId: string;
+  prediction: ShareType;
+  nShares: number;
+};
+ 
 type WithdrawalRow = {
-  id: 'string',
-  timestamp: 'string',
-  railguntransactionid: 'string',
-  manifolduserid: 'string',
-  manifoldusername: 'string',
-  manifoldtransferid: 'string' | null,
-  amount: 'string',
-  state: 'string'
+  id: string,
+  timestamp: string,
+  railguntransactionid: string,
+  manifolduserid: string,
+  manifoldusername: string,
+  manifoldtransferid: string | null,
+  amount: string,
+  state: string
 };
 
 const isWithdrawalRow = (value: unknown) : value is WithdrawalRow => (
@@ -94,17 +104,17 @@ const isWithdrawalRow = (value: unknown) : value is WithdrawalRow => (
 );
 
 type BetRow = {
-  id: 'string',
-  timestamp: 'string',
-  railguntransactionid: 'string',
-  amount: 'string',
-  marketurl: 'string',
-  marketid: 'string',
-  prediction: 'string',
-  redemptionaddress: 'string',
-  betid: 'string' | null,
-  nshares: 'string' | null,
-  state: 'string'
+  id: string,
+  timestamp: string,
+  railguntransactionid: string,
+  amount: string,
+  marketurl: string,
+  marketid: string,
+  prediction: string,
+  redemptionaddress: string,
+  betid: string | null,
+  nshares: string | null,
+  state: string
 };
 
 const isBetRow = (value: unknown) : value is BetRow => (
@@ -123,7 +133,7 @@ const isBetRow = (value: unknown) : value is BetRow => (
     )
     &&  (
       value.nshares === null
-      || typeof value.nshares === 'string'
+      || typeof value.nshares === 'number'
     )
     && typeof value.state === 'string'
 );
@@ -177,4 +187,5 @@ export {
   Bet,
   BetRow,
   WithdrawalRow,
+  Redemtion,
 };

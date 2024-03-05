@@ -8,7 +8,8 @@ const processBets = async (): Promise<void> => {
   const bet = await database.getQueuedBet();
   console.log('bet to process', bet);
   if (bet === undefined) {
-    setTimeout(processBets, 1000);
+    // call processRedemption in case no bet is found
+    setTimeout(processRedemption, 1000);
     return;
   }
   try {
@@ -34,6 +35,39 @@ const processBets = async (): Promise<void> => {
 const initialize = () => {
 processBets();
 };
+
+const processRedemption = async (): Promise<void> => {
+  console.log('checking for redemption to process');
+  const redemption = await database.getQueuedRedemption();
+  if (redemption === undefined) {
+    // getting back to bet processing in case no redemption is found
+    setTimeout(processBets, 1000);
+    return;
+  }
+  try {
+    console.log('Processing redemption', redemption);
+    const [received_mana, bet_array] = await Manifold.closePosition(redemption.marketId, redemption.prediction, Number(redemption.nShares));
+    if (received_mana) {
+      for (const bet of bet_array) {
+        database.createRedemptionTransaction(redemption.id, bet);
+      }
+      // Using deposit function to process redemption
+      const railgunAddress = redemption.redemptionAddress;
+      const manifoldUserId = await Manifold.fetchMyId();
+      const manifoldTransferId = 'undefined';
+      database.createDeposit(railgunAddress, manifoldTransferId, manifoldUserId, BigInt(received_mana));
+      database.updateBetToRedeemed(redemption.id);
+    } else {
+      throw new Error('Failed to redeem');
+    }
+  } catch (e: unknown) {
+    console.warn('Failed to process a redemption correctly');
+    console.log(e);
+    database.updateBetToFailed(redemption.id);
+  }
+  setTimeout(processBets, 1000);
+  return;
+}
 
 export default {
 initialize,

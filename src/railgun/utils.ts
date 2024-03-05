@@ -252,7 +252,7 @@ export const handleManifoldTransfer: ManifoldTransactionCallback = async (transf
     // console.log('handling a transfer', transfer);
     const zkAddress = Railgun.extractZKaddress(transfer.memo);
     if (zkAddress) {
-      await database.createDepositIfNotExists(zkAddress, transfer.id, transfer.from, transfer.amount);
+      await database.createDeposit(zkAddress, transfer.id, transfer.from, transfer.amount);
     }
   };
   
