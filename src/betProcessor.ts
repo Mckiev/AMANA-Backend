@@ -20,7 +20,7 @@ const processBets = async (): Promise<void> => {
       if (betId === undefined) {
         throw new Error('Failed to place bet');
       } else {
-        database.updateBetToPlaced(bet.id, betId, n_shares);
+        database.updateBetToPlaced(bet.id, betId, Math.floor(n_shares));
       }
     }
   } catch (e: unknown) {
@@ -48,14 +48,16 @@ const processRedemption = async (): Promise<void> => {
     const [received_mana, bet_array] = await Manifold.closePosition(redemption.marketId, redemption.prediction, Number(redemption.nShares));
     if (received_mana) {
       for (const bet of bet_array) {
-        database.createRedemptionTransaction(redemption.id, bet);
+        await database.createRedemptionTransaction(redemption.id, bet);
       }
       // Using deposit function to process redemption
       const railgunAddress = redemption.redemptionAddress;
       const manifoldUserId = await Manifold.fetchMyId();
       const manifoldTransferId = 'undefined';
-      database.createDeposit(railgunAddress, manifoldTransferId, manifoldUserId, BigInt(received_mana));
-      database.updateBetToRedeemed(redemption.id);
+
+      await database.createDeposit(railgunAddress, manifoldTransferId, manifoldUserId, BigInt(received_mana));
+      console.log('Redemption processed');
+      await database.updateBetToRedeemed(redemption.id);
     } else {
       throw new Error('Failed to redeem');
     }
