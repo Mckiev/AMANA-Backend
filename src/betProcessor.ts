@@ -53,7 +53,8 @@ const processRedemption = async (): Promise<void> => {
       // Using deposit function to process redemption
       const railgunAddress = redemption.redemptionAddress;
       const manifoldUserId = await Manifold.fetchMyId();
-      const manifoldTransferId = 'undefined';
+      // using this to distingush between mana deposits and bet redemptions
+      const manifoldTransferId = 'redemption:' + redemption.betId;
 
       await database.createDeposit(railgunAddress, manifoldTransferId, manifoldUserId, BigInt(received_mana));
       console.log('Redemption processed');
