@@ -112,12 +112,14 @@ const createDeposit = async (
   manifoldUserId: string,
   amount: bigint,
 ): Promise<void> => {
+  console.log('creating deposit for', railgunAddress, manifoldTransferId, manifoldUserId, amount);
   const id = generateId();
   const timestamp = Date.now();
   const state = DepositState.Requested;
   const query = 'INSERT INTO Deposits (id, timestamp, railgunAddress, manifoldTransferId, manifoldUserId, amount, state) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT DO NOTHING';
   const parameters = [id, timestamp, railgunAddress, manifoldTransferId, manifoldUserId, amount, state];
   await connection.query(query, parameters);
+  console.log('deposit created');
 };
 
 const updateDepositToSubmitted = async (id: string): Promise<void> => {

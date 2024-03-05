@@ -376,8 +376,9 @@ async function buyShares(marketId: string, yes_or_no: ShareType, amount: number,
   if (!json.isFilled) {
     throw new Error('Failed to buy shares');
   }
-
-  const bet: Bet = { betId: json.betId, marketId, prediction: yes_or_no, n_shares: json.shares, mana_amount: json.amount };
+  const n_shares = Math.floor(json.shares);
+  const mana_amount = Math.floor(json.amount);
+  const bet: Bet = { betId: json.betId, marketId, prediction: yes_or_no, n_shares, mana_amount};
   return bet;
 }
 
@@ -408,9 +409,11 @@ const sellShares = async (marketId: string, prediction: ShareType, shares_amount
   }
 
   const mana_amount = Math.round(json.amount);
+  const n_shares = Math.floor(json.shares);
   // mana amount is negative, because we are receiving mana, rather than spending it
-  console.log(`sold shares: ${shares_amount} for ${-mana_amount} mana`);
-  const bet: Bet = { betId: json.betId, marketId, prediction, n_shares: -shares_amount, mana_amount };
+  console.log(`sold shares: ${n_shares} for ${-mana_amount} mana`);
+  
+  const bet: Bet = { betId: json.betId, marketId, prediction, n_shares, mana_amount };
   return bet;  
 }
 
@@ -436,11 +439,12 @@ const sellAllShares = async (marketId: string): Promise<Bet> => {
     throw new Error('Failed to sell shares');
   }
   console.log('json is: ', json);
-  const mana_amount = Math.round(json.amount);
-  const shares_amount = Math.round(json.shares);
+  const mana_amount = Math.floor(json.amount);
+  const n_shares = Math.floor(json.shares);
   const shares_type = json.outcome;
-  console.log(`sold ${shares_type} shares: ${-shares_amount} for ${-mana_amount} mana`);
-  const bet: Bet = { betId: json.betId, marketId, prediction: shares_type, n_shares: shares_amount, mana_amount };
+  console.log(`sold ${shares_type} shares: ${-n_shares} for ${-mana_amount} mana`);
+
+  const bet: Bet = { betId: json.betId, marketId, prediction: shares_type, n_shares, mana_amount };
   return bet; 
 }
 
@@ -451,25 +455,23 @@ const buyNShares = async (marketId: string, prediction: ShareType, shares_amount
   let prob = 0.5;
   let mana_amount = 0;
   const bet_array: Bet[] = [];
-  let betId = '';
   while (shares_bought < shares_amount) {
       prob = await getMarketProb(marketId);
       mana_amount = Math.floor((shares_amount - shares_bought) * (prediction === ShareType.yes ? prob : 1 - prob));
       mana_amount += 10; // aiming to overshoot a little
       console.log(`prob = ${prob}, Buying ${prediction} shares for ${mana_amount} mana`);
       const {betId, n_shares} = await buyShares(marketId, prediction, mana_amount);
-      bet_array.push({ betId, marketId, prediction, n_shares, mana_amount });
+      const bet = { betId, marketId, prediction, n_shares, mana_amount }
+      bet_array.push(bet);
       shares_bought += n_shares;
       console.log(`Bought ${n_shares} shares, total bought: ${shares_bought}`);
   }
 
   console.log('selling extra shares');
   const extra_shares = shares_bought - shares_amount;
-  const sale_result = await sellShares(marketId, prediction, extra_shares);
-  betId = sale_result.betId;
-  mana_amount = sale_result.mana_amount;
-  bet_array.push({ betId, marketId, prediction, n_shares: -extra_shares, mana_amount });
-  console.log(`Sold ${extra_shares} shares for ${-mana_amount} mana`);
+  const sale_result : Bet = await sellShares(marketId, prediction, extra_shares);
+  bet_array.push(sale_result);
+  console.log(`Sold ${extra_shares} shares for ${-sale_result.mana_amount} mana`);
   shares_bought -= extra_shares;
   //mana_amount is negative, because we are receiving mana, rather than spending it
   console.log(`total shares bought: ${shares_bought}`);
