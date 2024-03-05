@@ -21,6 +21,7 @@ import {
   WithdrawalRow,
 } from './types';
 import { Bet as ManifoldBet } from './manifold';
+import { RailgunTransaction } from './railgun/utils';
 
 
 
@@ -94,7 +95,10 @@ const initialize = async () => {
   console.log('creating failed transactions table');
   await connection.query(`
     CREATE TABLE IF NOT EXISTS FailedTransactions (
-      txid TEXT PRIMARY KEY
+      txid TEXT PRIMARY KEY,
+      memo TEXT,
+      timestamp BIGINT,
+      amount BIGINT
     );
   `);
 };
@@ -311,12 +315,11 @@ const getQueuedBet = async (): Promise<Bet | undefined> => {
   const parameters = [BetState.Placing];
   const results = await connection.query(query, parameters);
   const row: unknown = results.rows[0];
-  console.log('row', row);
   if (row === undefined) {
     return undefined;
   }
   if (!isBetRow(row)) {
-    console.log('is not bet row');
+    console.log('is not bet row', row);
     throw new Error('Expected the row to be a BetRow');
   }
   const converted = convertToBet(row);
@@ -344,9 +347,9 @@ const updateBetToRedeemed = async (id: string): Promise<void> => {
   await connection.query(query, parameters);
 }
 
-const addFailedTransaction = async (txid: string): Promise<void> => {
-  const query = 'INSERT INTO FailedTransactions (txid) VALUES ($1) ON CONFLICT DO NOTHING';
-  const parameters = [txid];
+const addFailedTransaction = async (transaction: RailgunTransaction): Promise<void> => {
+  const query = 'INSERT INTO FailedTransactions (txid, memo, timestamp, amount) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING'
+  const parameters = [transaction.txid, transaction.memo, transaction.timestamp, transaction.amount];
   await connection.query(query, parameters);
 }
 
@@ -365,7 +368,6 @@ const getQueuedRedemption = async (): Promise<Bet | undefined> => {
   const parameters = [BetState.Redeeming];
   const results = await connection.query(query, parameters);
   const row: unknown = results.rows[0];
-  console.log('row', row);
   if (row === undefined) {
     return undefined;
   }

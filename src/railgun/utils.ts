@@ -269,7 +269,7 @@ export const handleRailgunTransaction = async (transaction : RailgunTransaction)
       }
     } catch (e) {
       console.error('Failed to handle transaction', transaction.txid);
-      await database.addFailedTransaction(transaction.txid);
+      await database.addFailedTransaction(transaction);
     }
   
     // TODO handle bets and closes
