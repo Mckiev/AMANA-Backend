@@ -14,6 +14,7 @@ const processDeposits = async (): Promise<void> => {
       await transaction.wait(3);
       await database.updateDepositToConfirmed(deposit.id);
     } catch (e: unknown) {
+      console.log("failed to process deposit", e);
       await database.updateDepositToFailed(deposit.id);
     }
   }

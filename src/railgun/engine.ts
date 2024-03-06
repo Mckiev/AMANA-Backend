@@ -19,7 +19,7 @@ export const setEngineLoggers = () => {
     setLoggers(logMessage, logError);
   }
   
-export  const initializeEngine = (): void => {
+export  const initializeEngine = async(): Promise<void> => {
     // Name for your wallet implementation.
     // Encrypted and viewable in private transaction history.
     // Maximum of 16 characters, lowercase.
@@ -62,7 +62,7 @@ export  const initializeEngine = (): void => {
     // Set to true if you would like to view verbose logs for private balance and TXID scans
     const verboseScanLogging = false;
     
-    startRailgunEngine(
+    await startRailgunEngine(
       walletSource,
       db,
       shouldDebug,
@@ -96,7 +96,7 @@ export const loadEngineProvider = async () => {
       "providers": [
         // The following are example providers. Use your preferred providers here.
         {
-          "provider": config.polygonApiKey,
+          "provider": "https://1rpc.io/matic",
           "priority": 1,
           "weight": 1
         },

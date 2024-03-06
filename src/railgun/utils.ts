@@ -166,7 +166,6 @@ const isRailgunTransaction = (value: RailgunTransaction | undefined): value is R
 export async function fetchNewTransactions(): Promise<RailgunTransaction[]>{
     console.log('Fetching new transactions');
     const wallet = getWallet();
-    // await refreshBalances(chain, undefined);
     try {
         const currentTransactionHistory = await wallet.getTransactionHistory(chain, undefined);
         // console.log('Latest transactions:', currentTransactionHistory);
