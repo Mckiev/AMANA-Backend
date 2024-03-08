@@ -32,7 +32,7 @@ const processBets = async (): Promise<void> => {
 };
 
 const initialize = () => {
-processBets();
+  processBets();
 };
 
 const processRedemption = async (): Promise<void> => {
@@ -72,5 +72,5 @@ const processRedemption = async (): Promise<void> => {
 }
 
 export default {
-initialize,
+  initialize,
 };

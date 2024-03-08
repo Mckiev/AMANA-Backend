@@ -113,7 +113,7 @@ export const loadEngineProvider = async () => {
       ]
     }
   
-    const pollingInterval = 5000; // 5 seconds
+    const pollingInterval = 15000; // 15 seconds
 
     await loadProvider(
       POLYGON_PROVIDERS_JSON,
