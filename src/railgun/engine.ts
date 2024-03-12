@@ -4,7 +4,6 @@ import {POIList} from '@railgun-community/engine';
 import { groth16 } from 'snarkjs';
 import Level from 'leveldown';
 import { createArtifactStore } from './create-artifact-store';
-import config  from '../config';
 
 export type Optional<T> = T | null | undefined;
 

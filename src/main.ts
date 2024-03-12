@@ -6,10 +6,15 @@ import depositProcessor from './depositProcessor';
 import withdrawalProcessor from './withdrawalProcessor';
 import betProcessor from './betProcessor';
 import { handleManifoldTransfer, handleRailgunTransaction } from './railgun/utils';
+import { stopRailgunEngine } from '@railgun-community/wallet';
 // import config from './config';
 // import wait from './utils/wait';
 
-
+const restartEngine = async() => {
+  console.log('Restarting Railgun engine...');
+  await stopRailgunEngine();
+  await Railgun.initialize();
+}
 
 const main = async() => {
   await Railgun.initialize();
@@ -19,7 +24,7 @@ const main = async() => {
   betProcessor.initialize();
   Manifold.onTransfer(handleManifoldTransfer);
   Railgun.onTransaction(handleRailgunTransaction);
-
+  setTimeout(restartEngine, 1000 * 5 * 60);
   // await wait(15_000);
   // console.log('Sending test transfer...');
   // const railgunWalletInfo = await Railgun.createWallet(config.encryptionKey, config.userMnemonic, Railgun.creationBlockNumberMap);
