@@ -7,6 +7,9 @@ import {chain, getWallet} from './railgun';
 import Manifold, { ManifoldTransactionCallback } from "../manifold";
 import database from '../database';
 import * as Railgun from './railgun';
+import { InfuraProvider } from 'ethers';
+
+const provider = new InfuraProvider(137);
 
 type RailgunTransactionCallback = (tx: RailgunTransaction) => void;
 
@@ -130,7 +133,7 @@ export async function fetchTransactionHistory(wallet:AbstractWallet, chain: Chai
     }
   }
 
-const convertTransaction = (tx: TransactionHistoryEntry): RailgunTransaction | undefined => {
+const convertTransaction = async (tx: TransactionHistoryEntry): Promise<RailgunTransaction | undefined> => {
     if (tx.receiveTokenAmounts.length === 0) {
         return undefined;
     }
@@ -148,6 +151,9 @@ const convertTransaction = (tx: TransactionHistoryEntry): RailgunTransaction | u
         0n,
     );
     const recipientAddress = getWallet().getAddress();
+    if (!tx.timestamp) {
+        tx.timestamp = (await provider.getBlock(tx.blockNumber))?.timestamp;
+    }
     const timestamp = BigInt(Math.floor(tx.timestamp * 1000));
     return {
         txid: tx.txid,
@@ -157,6 +163,8 @@ const convertTransaction = (tx: TransactionHistoryEntry): RailgunTransaction | u
         recipientAddress,
         timestamp
     };
+    
+
 }
 
 const isRailgunTransaction = (value: RailgunTransaction | undefined): value is RailgunTransaction => {
@@ -166,13 +174,10 @@ const isRailgunTransaction = (value: RailgunTransaction | undefined): value is R
 export async function fetchNewTransactions(): Promise<RailgunTransaction[]>{
     console.log('Fetching new transactions');
     const wallet = getWallet();
-    // await refreshBalances(chain, undefined);
     try {
         const currentTransactionHistory = await wallet.getTransactionHistory(chain, undefined);
-        // console.log('Latest transactions:', currentTransactionHistory);
-        return currentTransactionHistory
-            .map(convertTransaction)
-            .filter(isRailgunTransaction);
+        const convertedTransactions = await Promise.all(currentTransactionHistory.map(convertTransaction));
+        return convertedTransactions.filter(isRailgunTransaction);
     } catch (error) {
         console.error('Error encountered:', error);
         throw error;

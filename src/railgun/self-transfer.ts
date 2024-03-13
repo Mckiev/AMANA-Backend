@@ -36,8 +36,8 @@ export async function sendTransfer(
   const originalGasEstimate = 0n; // Always 0, we don't have this yet.
   
   const evmGasType = EVMGasType.Type2;
-  const maxFeePerGas = parseUnits('100', 'gwei');
-  const maxPriorityFeePerGas = parseUnits('50', 'gwei');
+  const maxFeePerGas = parseUnits('200', 'gwei');
+  const maxPriorityFeePerGas = parseUnits('100', 'gwei');
 
   const originalGasDetails: TransactionGasDetails = {
     evmGasType, 

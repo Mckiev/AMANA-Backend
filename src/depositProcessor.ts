@@ -6,6 +6,7 @@ const processDeposits = async (): Promise<void> => {
   const deposit = await database.getQueuedDeposit();
   if (deposit) {
     try {
+      console.log('Processing deposit', deposit);
       const username = await Manifold.getUsername(deposit.manifoldUserId);
       const memo = `DEPOSIT FROM ${username}`;
       const fromWallet = Railgun.getWallet();
@@ -14,6 +15,7 @@ const processDeposits = async (): Promise<void> => {
       await transaction.wait(3);
       await database.updateDepositToConfirmed(deposit.id);
     } catch (e: unknown) {
+      console.log("failed to process deposit", e);
       await database.updateDepositToFailed(deposit.id);
     }
   }

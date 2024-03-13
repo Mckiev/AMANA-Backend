@@ -22,7 +22,7 @@ export const getWallet = (): AbstractWallet => {
 }
 
 export const initialize = async () => {
-    initializeEngine();
+    await initializeEngine();
     await loadEngineProvider();
     setEngineLoggers();
     

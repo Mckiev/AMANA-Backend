@@ -4,7 +4,7 @@ import {POIList} from '@railgun-community/engine';
 import { groth16 } from 'snarkjs';
 import Level from 'leveldown';
 import { createArtifactStore } from './create-artifact-store';
-import config  from '../config';
+import  config  from '../config';
 
 export type Optional<T> = T | null | undefined;
 
@@ -19,7 +19,7 @@ export const setEngineLoggers = () => {
     setLoggers(logMessage, logError);
   }
   
-export  const initializeEngine = (): void => {
+export  const initializeEngine = async(): Promise<void> => {
     // Name for your wallet implementation.
     // Encrypted and viewable in private transaction history.
     // Maximum of 16 characters, lowercase.
@@ -62,7 +62,7 @@ export  const initializeEngine = (): void => {
     // Set to true if you would like to view verbose logs for private balance and TXID scans
     const verboseScanLogging = false;
     
-    startRailgunEngine(
+    await startRailgunEngine(
       walletSource,
       db,
       shouldDebug,
@@ -96,8 +96,13 @@ export const loadEngineProvider = async () => {
       "providers": [
         // The following are example providers. Use your preferred providers here.
         {
-          "provider": config.polygonApiKey,
+          "provider": config.rpc1_api,
           "priority": 1,
+          "weight": 1
+        },
+        {
+          "provider": "https://1rpc.io/matic",
+          "priority": 3,
           "weight": 1
         },
         {
@@ -113,7 +118,7 @@ export const loadEngineProvider = async () => {
       ]
     }
   
-    const pollingInterval = 5000; // 5 seconds
+    const pollingInterval = 15000; // 15 seconds
 
     await loadProvider(
       POLYGON_PROVIDERS_JSON,

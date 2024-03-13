@@ -89,7 +89,11 @@ export enum ShareType {
 
 export type ManifoldTransactionCallback = (transfer: ManifoldTransfer) => void;
 
+let myIdCached: string | undefined;
 const fetchMyId = async (): Promise<string> => {
+  if (myIdCached !== undefined) {
+    return myIdCached;
+  }
   const url = `https://api.manifold.markets/v0/me`;
   const headers = {
     'Authorization': `Key ${config.apiKey}`,
@@ -100,10 +104,11 @@ const fetchMyId = async (): Promise<string> => {
   if (!isUserData(json)) {
     throw new Error('Unexpected Manifold API response for "me" user');
   }
+  myIdCached = json.id;
   return json.id;
 }
 
-function parceTransfer(transactions: unknown[]): ManifoldTransfer[] {
+function parseTransfer(transactions: unknown[]): ManifoldTransfer[] {
   return transactions.map(transaction => {
     if (!isManifoldTransaction(transaction)) {
       throw new Error('Unexpected transaction type returned from Manifold API');
@@ -131,10 +136,10 @@ function parceTransfer(transactions: unknown[]): ManifoldTransfer[] {
         console.log('url and headers were: ', url, headers)
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      return  parceTransfer(await response.json());
+      return  parseTransfer(await response.json());
     } catch (error) {
       console.error('Error fetching managrams:', error);
-      throw error;
+      return [];
     }
 
 }
