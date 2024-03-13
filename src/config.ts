@@ -20,6 +20,7 @@ if (userMnemonic === undefined) {
 const apiKey = process.env.MANIFOLD_BOT_API_KEY ?? '';
 const mckievAPIKey = process.env.MANIFOLD_MCKIEV_API_KEY ?? '';
 const polygonApiKey = process.env.POLYGON_INFURA_API ?? '';
+const rpc1_api = process.env.RPC1_API ?? '';
 
 const feeToken = constants.TOKENS.WMATIC;
 
@@ -31,4 +32,5 @@ export default {
   mckievAPIKey,
   feeToken,
   polygonApiKey,
+  rpc1_api,
 };
