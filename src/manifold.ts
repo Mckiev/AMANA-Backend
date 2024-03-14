@@ -543,7 +543,7 @@ const closePosition = async (marketId: string, prediction: ShareType, shares_amo
     console.log(`Couldn't sell shares: no shares of the requested type available`);
   }
 
-  if (shares_to_buy > 0) {
+  if (shares_to_buy > 1) {
     // after the sale we did above, we shouldn't have any shares of the requested type
 
     // If we have sold our manifold position, but need more shares to cover the requested amount
