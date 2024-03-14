@@ -7,6 +7,7 @@ import withdrawalProcessor from './withdrawalProcessor';
 import betProcessor from './betProcessor';
 import { handleManifoldTransfer, handleRailgunTransaction } from './railgun/utils';
 
+
 const main = async() => {
   await Railgun.initialize();
   await database.initialize();
