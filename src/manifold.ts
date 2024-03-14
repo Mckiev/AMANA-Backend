@@ -69,6 +69,14 @@ type BetResponseJson = ResponseJson & {
   outcome: ShareType;
 };
 
+type ErrorResponse = {
+  message: string;
+};
+
+const isErrorResponse = (value: unknown): value is ErrorResponse => (
+  isObjectRecord(value) && typeof value.message === 'string'
+);
+
 
 const isResponseJson = (value: unknown): value is ResponseJson => (
   isObjectRecord(value)
@@ -387,7 +395,7 @@ async function buyShares(marketId: string, yes_or_no: ShareType, amount: number,
   return bet;
 }
 
-const sellShares = async (marketId: string, prediction: ShareType, shares_amount: number): Promise<Bet> => {
+const sellShares = async (marketId: string, prediction: ShareType, shares_amount: number): Promise<Bet | null> => {
   const url = `https://api.manifold.markets/v0/market/${marketId}/sell`;
   const headers = {
     'Authorization': `Key ${config.apiKey}`,
@@ -402,7 +410,28 @@ const sellShares = async (marketId: string, prediction: ShareType, shares_amount
     })
   });
 
-  const json: BetResponseJson = await response.json();
+  const json = await response.json();
+  console.log(json)
+
+  if (isErrorResponse(json)) {
+    // Check if the error message matches the specific format
+    const errorRegex = /You can only sell up to ([\d.e+-]+) shares\./;
+    const match = json.message.match(errorRegex);
+
+    if (match) {
+      // Extract the maximum number of shares from the error message
+      const maxShares = parseFloat(match[1]);
+      
+      // Sell the maximum number of shares
+      return await sellShares(marketId, prediction, maxShares);
+    } else if (json.message === `You don't have any ${prediction} shares to sell.`) {
+      // If the user doesn't have any shares to sell, return null
+      return null;
+    } else {
+      // If the error message doesn't match the expected format, throw an error
+      throw new Error(`Unexpected error: ${json.message}`);
+    }
+  }
 
   if (!isBetResponseJson(json)) {
     console.log('json is: ', json);
@@ -413,14 +442,15 @@ const sellShares = async (marketId: string, prediction: ShareType, shares_amount
     throw new Error('Failed to sell shares');
   }
 
-  const mana_amount = Math.round(json.amount);
-  const n_shares = Math.floor(json.shares);
-  // mana amount is negative, because we are receiving mana, rather than spending it
-  console.log(`sold shares: ${n_shares} for ${-mana_amount} mana`);
+  // rounding towards smaller number using Math.floor (since the numbers are negative)
+  const mana_amount = Math.ceil(json.amount);
+  const n_shares = Math.ceil(json.shares);
+
+  console.log(`sold shares: ${n_shares} for ${mana_amount} mana`);
   
   const bet: Bet = { betId: json.betId, marketId, prediction, n_shares, mana_amount };
   return bet;  
-}
+};
 
 const sellAllShares = async (marketId: string): Promise<Bet> => {
   const url = `https://api.manifold.markets/v0/market/${marketId}/sell`;
@@ -474,11 +504,14 @@ const buyNShares = async (marketId: string, prediction: ShareType, shares_amount
 
   console.log('selling extra shares');
   const extra_shares = shares_bought - shares_amount;
-  const sale_result : Bet = await sellShares(marketId, prediction, extra_shares);
-  bet_array.push(sale_result);
-  console.log(`Sold ${extra_shares} shares for ${-sale_result.mana_amount} mana`);
-  shares_bought -= extra_shares;
-  //mana_amount is negative, because we are receiving mana, rather than spending it
+  const sale_result : Bet | null  = await sellShares(marketId, prediction, extra_shares);
+  if (sale_result === null) {
+    console.log(`Couldn't sell extra shares: no shares of the requested type available`);
+  } else {
+    bet_array.push(sale_result);
+    console.log(`Sold ${extra_shares} shares for ${-sale_result.mana_amount} mana`);
+    shares_bought -= extra_shares;  //mana_amount is negative, because we are receiving mana, rather than spending it
+  }
   console.log(`total shares bought: ${shares_bought}`);
   return bet_array;
 }
@@ -498,31 +531,23 @@ const closePosition = async (marketId: string, prediction: ShareType, shares_amo
   let mana_received = 0; 
   let shares_to_buy = shares_amount;
   let bet_array: Bet[] = [];
-  const position = await getMarketPosition(marketId, await fetchMyId());
-  if (position !== undefined) {
-    const [position_prediction, shares] = position;
-    if (position_prediction == prediction) {
-        if (shares >= shares_amount) {
-          const sale_result = await sellShares(marketId, prediction, shares_amount);
-          bet_array.push(sale_result);
-          // sale_result.shares is negative, because we are selling shares
-          shares_to_buy += sale_result.n_shares;
-          // mana_amount is negative, because we are receiving mana, rather than spending it
-          mana_received -= sale_result.mana_amount;
-        } else {
-          const sale_result = await sellAllShares(marketId);
-          bet_array.push(sale_result);
-          // sale_result.shares is negative, because we are selling shares
-          shares_to_buy += sale_result.n_shares;
-          // mana_amount is negative, because we are receiving mana, rather than spending it
-          mana_received -= sale_result.mana_amount;
-        }
-    }
+  // first we are trying to sell the shares we have, which will either close the position, or sell all of the available shares
+  const sale_result: Bet | null  = await sellShares(marketId, prediction, shares_amount);
+  if (sale_result !== null) {
+    bet_array.push(sale_result);
+    // sale_result.shares is negative, because we are selling shares
+    shares_to_buy += sale_result.n_shares;
+    // mana_amount is negative, because we are receiving mana, rather than spending it
+    mana_received -= sale_result.mana_amount;
+  } else {
+    console.log(`Couldn't sell shares: no shares of the requested type available`);
   }
 
   if (shares_to_buy > 0) {
-    // If we have closed our manifold position, but need more shares to cover the requested amount
-    // we buy the remaining shares
+    // after the sale we did above, we shouldn't have any shares of the requested type
+
+    // If we have sold our manifold position, but need more shares to cover the requested amount
+    // we buy the remaining shares of the opposite type
     const reverse_prediction = (prediction == ShareType.no) ? ShareType.yes : ShareType.no;
     const purchase_bet_array = await buyNShares(marketId, reverse_prediction, shares_to_buy);
     bet_array = bet_array.concat(purchase_bet_array);
