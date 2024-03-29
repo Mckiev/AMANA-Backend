@@ -257,7 +257,7 @@ export function extractBet(input: string): string[] {
 
 
 export const handleManifoldTransfer: ManifoldTransactionCallback = async (transfer) => {
-    // console.log('handling a transfer', transfer);
+    console.log('handling a transfer', transfer);
     const zkAddress = Railgun.extractZKaddress(transfer.memo);
     if (zkAddress) {
       await database.createDeposit(zkAddress, transfer.id, transfer.from, transfer.amount);
