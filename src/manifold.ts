@@ -1,4 +1,5 @@
 import config from './config';
+import constants from './constants';
 import { isObjectRecord } from './types';
 import wait from './utils/wait';
 
@@ -98,6 +99,8 @@ export enum ShareType {
 export type ManifoldTransactionCallback = (transfer: ManifoldTransfer) => void;
 
 let myIdCached: string | undefined;
+// Hardcoding the bot ID for now, since api sometimes returns wrong ID
+myIdCached = constants.MANIFOLD.BOT_ID;
 const fetchMyId = async (): Promise<string> => {
   if (myIdCached !== undefined) {
     return myIdCached;
@@ -160,9 +163,6 @@ const onTransfer = (callback: ManifoldTransactionCallback): void => {
   const checkForTransfers = async () => {
     console.log('Checking for Manifold transfers...');
     const userId = await fetchMyId();
-    console.log('userId: ', userId);
-    const username = await getUsername(userId);
-    console.log('username: ', username);
     const allTransfers = await fetchTransfers(userId);
     console.log('allTransfers: ', allTransfers.slice(-5));
     allTransfers.forEach(transfer => {

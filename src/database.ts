@@ -107,8 +107,8 @@ const initialize = async () => {
 // deposit related functions
 
 const isBonusEligible = async (manifoldUserId: string): Promise<boolean> => {
-  const query = 'SELECT * FROM Deposits WHERE manifoldUserId=$1 AND state=$2 AND timestamp > $3';
-  const parameters = [manifoldUserId, DepositState.Confirmed, Date.now() -  60 * 60 * 1000];
+  const query = 'SELECT * FROM Deposits WHERE manifoldUserId=$1 AND state=$2';
+  const parameters = [manifoldUserId, DepositState.Confirmed];
   const results = await connection.query(query, parameters);
   const {rows} = results;
   if (!isArrayOfStringObjects(rows)) {

@@ -5,7 +5,7 @@ dotenv.config();
 // TODO will need to generate this safely in the future
 const encryptionKey: string = '0101010101010101010101010101010101010101010101010101010101010101';
 
-const mnemonic = process.env.TEST_MNEMONIC;
+const mnemonic = process.env.MNEMONIC;
 
 if (mnemonic === undefined) {
   throw new Error('An environment variable for the TEST_MNEMONIC was not provided.');
