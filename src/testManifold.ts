@@ -1,4 +1,4 @@
-import Manifold, { ShareType } from "./manifold";
+import Manifold from "./manifold";
 
 async function timeFunctionExecution(func: () => Promise<void>): Promise<number> {
   const start = performance.now();

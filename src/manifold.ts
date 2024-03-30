@@ -164,7 +164,6 @@ const onTransfer = (callback: ManifoldTransactionCallback): void => {
     console.log('Checking for Manifold transfers...');
     const userId = await fetchMyId();
     const allTransfers = await fetchTransfers(userId);
-    console.log('allTransfers: ', allTransfers.slice(-5));
     allTransfers.forEach(transfer => {
       const alreadyHandled = handledTransferIds.includes(transfer.id);
       if (!alreadyHandled) {

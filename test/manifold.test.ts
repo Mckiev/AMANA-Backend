@@ -74,7 +74,7 @@ describe('buyShares function', () => {
 });
 
 
-describe('fetchMarketID function', () => {
+describe.only('fetchMarketID function', () => {
     it('should fetch marketID from Slug successfully', async () => {
         const marketSlug = "test-question-4c1ff3f827cb";
         const result = await Manifold.getMarketID(marketSlug);
