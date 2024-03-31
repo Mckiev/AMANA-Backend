@@ -106,6 +106,17 @@ const initialize = async () => {
 
 // deposit related functions
 
+const isBonusEligible = async (manifoldUserId: string): Promise<boolean> => {
+  const query = 'SELECT * FROM Deposits WHERE manifoldUserId=$1 AND state=$2';
+  const parameters = [manifoldUserId, DepositState.Confirmed];
+  const results = await connection.query(query, parameters);
+  const {rows} = results;
+  if (!isArrayOfStringObjects(rows)) {
+    throw new Error('Expected the rows to be an array of string objects');
+  }
+  return rows.length === 0;
+}
+
 const createDeposit = async (
   railgunAddress: string,
   manifoldTransferId: string,
@@ -382,6 +393,7 @@ const getQueuedRedemption = async (): Promise<Bet | undefined> => {
 export default {
   initialize,
   createDeposit,
+  isBonusEligible,
   updateDepositToSubmitted,
   updateDepositToConfirmed,
   updateDepositToFailed,
