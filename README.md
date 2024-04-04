@@ -45,4 +45,4 @@ I will pay back in MANA for any discovered vulnerabilities.
 
 ## Contact
 
-For any questions or inquiries, please reach me at contact@amana.bot or join the [Telegram channel](https://t.me/+xMd7-DihPUJjZjNi) for discussions and support.
+For any questions or inquiries, please reach me at contact@amana.bot or join the [Telegram channel](https://t.me/AMANACHAT) for discussions and support.
