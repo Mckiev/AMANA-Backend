@@ -139,7 +139,7 @@ const convertTransaction = async (tx: TransactionHistoryEntry): Promise<RailgunT
     }
     const tokenAddress = tx.receiveTokenAmounts[0]?.tokenData.tokenAddress ?? '';
     const amanaAmounts = tx.receiveTokenAmounts.filter(amount => (
-        amount.tokenData.tokenAddress === constants.TOKENS.AMANA
+        amount.tokenData.tokenAddress.toLowerCase() === constants.TOKENS.AMANA.toLowerCase()
     ));
     const memo = typeof amanaAmounts[0]?.memoText === 'string'
         ? amanaAmounts[0]?.memoText

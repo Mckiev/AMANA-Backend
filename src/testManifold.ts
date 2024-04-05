@@ -16,6 +16,8 @@ const main = async () => {
     console.log('my_id is: ', my_id);
     console.log('marketId is: ', marketId);
     console.log('username is: ', username);
+    const botid = await Manifold.getUserID('TestAmanaBot');
+    console.log('botid is: ', botid);
 
     // const result = await Manifold.buyShares(marketId, ShareType.yes, 20);
     // console.log('result is: ', result);
