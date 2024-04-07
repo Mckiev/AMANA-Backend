@@ -10,14 +10,15 @@ async function timeFunctionExecution(func: () => Promise<void>): Promise<number>
 
 
 const main = async () => {
-    const marketId = await Manifold.getMarketID('will-claude-3-outrank-gpt4-on-the-l');
+    const marketId = await Manifold.getMarketID('will-my-pussy-in-bio-spam-stop-by-a');
     const my_id = await Manifold.fetchMyId();
     const username = await Manifold.getUsername(my_id);
     console.log('my_id is: ', my_id);
     console.log('marketId is: ', marketId);
     console.log('username is: ', username);
-    const botid = await Manifold.getUserID('TestAmanaBot');
-    console.log('botid is: ', botid);
+    // const mckiev_id = await Manifold.getUserID('mckiev');
+    const market_prob = await Manifold.getMarketProb(marketId);
+    console.log('position is: ', market_prob);
 
     // const result = await Manifold.buyShares(marketId, ShareType.yes, 20);
     // console.log('result is: ', result);

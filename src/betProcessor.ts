@@ -45,6 +45,22 @@ const processRedemption = async (): Promise<void> => {
   }
   try {
     console.log('Processing redemption', redemption);
+    const marketResolved = await Manifold.isMarketResolved(redemption.marketId);
+    if (marketResolved) {
+      const resolution = await Manifold.getMarketResolution(redemption.marketId);
+      if (resolution !== prediction) {
+        console.log('Market resolved against us, no shares to sell');
+        await database.updateBetToRedeemed(redemption.id);
+      }
+      else {
+        console.log('Market resolved in our favor, paying out amana');
+        const railgunAddress = redemption.redemptionAddress;
+        const manifoldUserId = await Manifold.fetchMyId();
+        const manifoldTransferId = 'redemption:marketResolved';
+        const payout = Number(redemption.nShares);
+        await database.createDeposit(railgunAddress, manifoldTransferId, manifoldUserId, BigInt(payout)); 
+    }
+  }
     const [received_mana, bet_array] = await Manifold.closePosition(redemption.marketId, redemption.prediction, Number(redemption.nShares));
     if (received_mana) {
       for (const bet of bet_array) {
