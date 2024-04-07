@@ -1,5 +1,4 @@
 import * as dotenv from 'dotenv';
-import constants from './constants';
 dotenv.config();
 
 // TODO will need to generate this safely in the future
@@ -22,15 +21,12 @@ const mckievAPIKey = process.env.MANIFOLD_MCKIEV_API_KEY ?? '';
 const polygonApiKey = process.env.POLYGON_INFURA_API ?? '';
 const rpc1_api = process.env.RPC1_API ?? '';
 
-const feeToken = constants.TOKENS.WMATIC;
-
 export default {
   mnemonic,
   userMnemonic,
   encryptionKey,
   apiKey,
   mckievAPIKey,
-  feeToken,
   polygonApiKey,
   rpc1_api,
 };

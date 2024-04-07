@@ -51,11 +51,15 @@ const isUserData = (value: unknown): value is UserData => (
 type MarketData = {
   id: string;
   probability: number;
+  isResolved: boolean;
+  resolution: ShareType;
 }
 
 const isMarketData = (value: unknown): value is MarketData => (
   isObjectRecord(value)
     && typeof value.id === 'string'
+    && typeof value.probability === 'number'
+    && typeof value.isResolved === 'boolean'
 );
 
 type ResponseJson = {
@@ -304,6 +308,7 @@ const getMarketProb = async (marketId: string): Promise<number> => {
   };
   const response = await fetch(url, { headers });
   const json = await response.json();
+  console.log('json is: ', json);
   if (!isMarketData(json)) {
       throw new Error('Unexpected Manifold API response for "market"');
   }  
@@ -529,6 +534,35 @@ const buyNShares = async (marketId: string, prediction: ShareType, shares_amount
 //   -> We buy 50 No shares
 //     -> (1 - price) * 50 shares goes to Alice
 
+const isMarketResolved = async (marketId: string): Promise<boolean> => {
+  const url = `https://api.manifold.markets/v0/market/${marketId}`;
+  const headers = {
+    'Authorization': `Key ${config.apiKey}`,
+    'Content-Type': 'application/json'
+  };
+  const response = await fetch(url, { headers });
+  const json = await response.json();
+  if (!isMarketData(json)) {
+    throw new Error('Unexpected Manifold API response for "market"');
+  }
+  return json.isResolved;
+}
+
+const getMarketResolution = async (marketId: string): Promise<ShareType> => {
+  const url = `https://api.manifold.markets/v0/market/${marketId}`;
+  const headers = {
+    'Authorization': `Key ${config.apiKey}`,
+    'Content-Type': 'application/json'
+  };
+  const response = await fetch(url, { headers });
+  const json = await response.json();
+  if (!isMarketData(json)) {
+    throw new Error('Unexpected Manifold API response for "market"');
+  }
+  return json.resolution;
+}
+
+
 // sells given number of shares, handling the case when we don't have enough shares
 const closePosition = async (marketId: string, prediction: ShareType, shares_amount: number): Promise<[number, Bet[]]> => {
   let mana_received = 0; 
@@ -573,6 +607,9 @@ export default {
   onTransfer,
   ShareType,
   getMarketPosition,
+  getMarketProb,
+  isMarketResolved,
+  getMarketResolution,
   buyNShares,
   closePosition,
   sellShares,

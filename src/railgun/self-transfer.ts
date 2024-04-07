@@ -25,7 +25,7 @@ export async function sendTransfer(
   // Formatted token amounts to transfer.
   const erc20AmountRecipients: RailgunERC20AmountRecipient[] = [
     {
-      tokenAddress: constants.TOKENS.AMANA,
+      tokenAddress: constants.TOKENS.AMANA.toLowerCase(),
       amount: amount, // hexadecimal amount equivalent to 16
       recipientAddress,
     },
