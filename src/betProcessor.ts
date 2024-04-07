@@ -59,6 +59,7 @@ const processRedemption = async (): Promise<void> => {
           const manifoldTransferId = 'redemption:marketResolved';
           const payout = Number(redemption.nShares);
           await database.createDeposit(railgunAddress, manifoldTransferId, manifoldUserId, BigInt(payout)); 
+          await database.updateBetToRedeemed(redemption.id);
       }
     } else {
       const [received_mana, bet_array] = await Manifold.closePosition(redemption.marketId, redemption.prediction, Number(redemption.nShares));
