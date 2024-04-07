@@ -48,7 +48,7 @@ const processRedemption = async (): Promise<void> => {
     const marketResolved = await Manifold.isMarketResolved(redemption.marketId);
     if (marketResolved) {
       const resolution = await Manifold.getMarketResolution(redemption.marketId);
-      if (resolution !== prediction) {
+      if (resolution !== redemption.prediction) {
         console.log('Market resolved against us, no shares to sell');
         await database.updateBetToRedeemed(redemption.id);
       }
