@@ -1,5 +1,3 @@
-Here is the revised version with grammatical corrections and suggested improvements:
-
 # AMANA Backend
 
 This repository is part of the project that makes possible to bet completely anonymously on the [Manifold](https://manifold.markets?referrer=AMANABOT)
